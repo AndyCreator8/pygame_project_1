@@ -1,3 +1,5 @@
+from idlelib.window import add_windows_to_menu
+
 import pygame
 import sys
 from pygame.math import Vector2
@@ -50,7 +52,10 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.angle = 0
         self.orig = self.image
+        self.prev_angles = []
+        self.sc = 0
 
     # def get_coords(self):
     #     if pygame.sprite.spritecollide(self, block_sprites, False):
@@ -61,10 +66,16 @@ class Player(pygame.sprite.Sprite):
         pass
 
     def update(self, *args, **kwargs):
-        xy = pygame.mouse.get_pos() - Vector2(self.rect.x + self.size // 2, self.rect.y + self.size // 2)
-        radius, self.angle = xy.as_polar()
-        self.image = pygame.transform.rotate(self.orig, -self.angle - 90)
+        key = pygame.key.get_pressed()
+        if key[pygame.K_d]:
+            self.angle -= 5
+            self.image = pygame.transform.scale(self.orig, self.angle)
+        if key[pygame.K_a]:
+            self.angle += 5
+        self.image = pygame.transform.rotate(self.orig, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
+        # xy = pygame.mouse.get_pos() - Vector2(self.rect.x + self.size // 2, self.rect.y + self.size // 2)
+        # radius, self.angle = xy.as_polar()
 
 
 
@@ -101,15 +112,11 @@ class Map:
     def move(self):
         keys = pygame.key.get_pressed()
         for i in block_sprites.sprites():
-            angle = -player.angle - 90
-            print(angle, math.cos(math.radians(angle)), math.sin(math.radians(angle)))
-            if round(angle) in range(-360, -90):
-                angle += 180
-                i.rect.y -= math.cos(math.radians(angle)) * self.speed
-                i.rect.x -= math.sin(math.radians(angle)) * self.speed
-            else:
-                i.rect.y += math.cos(math.radians(angle)) * self.speed
-                i.rect.x += math.sin(math.radians(angle)) * self.speed
+            angle = player.angle
+            # print(angle, math.cos(math.radians(angle)), math.sin(math.radians(angle)))
+
+            i.rect.y += math.cos(math.radians(angle)) * self.speed
+            i.rect.x += math.sin(math.radians(angle)) * self.speed
             # print(math.tanh(angle))
             # if keys[pygame.K_w]:
             #     i.rect.y += 10
