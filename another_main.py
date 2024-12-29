@@ -104,8 +104,6 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.rect.x -= plane.vector.vx
         self.rect.y += plane.vector.vy
         print(plane.vector.vx)
-        # self.rect.move(*self.realv.get_int_xy())
-        # self.rect.x, self.rect.y = posf(self.pos, self.size)
 
 
 class Map(BasedMapObject):
@@ -123,6 +121,8 @@ class Bomb(BasedMapObject):
     def __init__(self):
         super().__init__(Bomb.bomb, plane.vector * 0.2, center)
         self.rect = self.image.get_rect()
+        self.rect.move(*self.realv.get_int_xy())
+        self.rect.x, self.rect.y = posf(self.pos, self.size)
         self.size = (100, 100)
         self.flytime = 2
         self.expltime = 2
@@ -134,8 +134,8 @@ class Bomb(BasedMapObject):
         if self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
             self.image = Bomb.crater
             self.size = (50, 50)
-        super().update()
 
+        super().update()
 
 
 class Plane(pygame.sprite.Sprite):
@@ -154,7 +154,6 @@ class Plane(pygame.sprite.Sprite):
         self.vector = Vector(10, 90)
         self.orig = self.image
         self.animation_sc = 6
-
 
     def update(self, *args, **kwargs):
         key = pygame.key.get_pressed()
@@ -180,7 +179,8 @@ class Plane(pygame.sprite.Sprite):
         else:
             self.vector.value = 10
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.vector.vx, self.vector.vy = self.vector.value * cos(math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
+        self.vector.vx, self.vector.vy = self.vector.value * cos(
+            math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
 
 
 pygame.init()

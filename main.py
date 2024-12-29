@@ -1,10 +1,9 @@
-from idlelib.window import add_windows_to_menu
 
 import pygame
 import sys
 from pygame.math import Vector2
 import math
-from pygame.examples.go_over_there import clock
+
 
 # Инициализация Pygame
 pygame.init()
@@ -69,7 +68,6 @@ class Player(pygame.sprite.Sprite):
         key = pygame.key.get_pressed()
         if key[pygame.K_d]:
             self.angle -= 5
-            self.image = pygame.transform.scale(self.orig, self.angle)
         if key[pygame.K_a]:
             self.angle += 5
         self.image = pygame.transform.rotate(self.orig, self.angle)
