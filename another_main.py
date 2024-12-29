@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 from math import sin, cos, asin, acos
@@ -50,8 +51,8 @@ def load_music(name):
 class Vector:
     def __init__(self, value=0, angle=0):
         self.value = value
-        self.vx, self.vy = self.value * cos(angle), self.value * sin(angle)
         self.angle = angle
+        self.vx, self.vy = self.value * cos(math.radians(angle)), self.value * sin(math.radians(angle))
 
     def get_x(self):
         return self.vx
@@ -91,7 +92,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = posf(pos, self.size)
         self.v = vector
-        self.realv = self.v - glvector
+        self.realv = self.v - plane.vector
         print(self.realv, type(self))
         self.t = 0
         self.clock = pygame.time.Clock()
@@ -100,8 +101,11 @@ class BasedMapObject(pygame.sprite.Sprite):
 
     def update(self, *args):
         self.t += self.tick() / 1000
-        self.rect.move(*self.realv.get_int_xy())
-        self.rect.x, self.rect.y = posf(self.pos, self.size)
+        self.rect.x -= plane.vector.vx
+        self.rect.y += plane.vector.vy
+        print(plane.vector.vx)
+        # self.rect.move(*self.realv.get_int_xy())
+        # self.rect.x, self.rect.y = posf(self.pos, self.size)
 
 
 class Map(BasedMapObject):
@@ -117,7 +121,7 @@ class Bomb(BasedMapObject):
     crater = scale(load_image("crater.webp"), 50, 50)
 
     def __init__(self):
-        super().__init__(Bomb.bomb, glvector * 0.2, center)
+        super().__init__(Bomb.bomb, plane.vector * 0.2, center)
         self.rect = self.image.get_rect()
         self.size = (100, 100)
         self.flytime = 2
@@ -133,14 +137,62 @@ class Bomb(BasedMapObject):
         super().update()
 
 
+
+class Plane(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(player)
+        self.image = load_image('0.png', -1)
+        self.animations = []
+        for i in range(-3, 4):
+            self.animations.append(load_image(f'{i}.png', -1))
+            if i != 0:
+                self.animations.append(load_image(f'{i}.png', -1))
+        # self.image = pygame.transform.scale(self.image, (100, 100))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = center[0]
+        self.rect.centery = center[1]
+        self.vector = Vector(10, 90)
+        self.orig = self.image
+        self.animation_sc = 6
+
+
+    def update(self, *args, **kwargs):
+        key = pygame.key.get_pressed()
+        if key[pygame.K_a]:
+            self.vector.angle += 4 - self.animation_sc // 2
+            self.animation_sc -= 1 if self.animation_sc > 0 else 0
+            self.image = self.animations[self.animation_sc]
+            self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+        elif key[pygame.K_d]:
+            self.vector.angle -= self.animation_sc // 4
+            self.animation_sc += 1 if self.animation_sc < 12 else 0
+            self.image = self.animations[self.animation_sc]
+            self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+        else:
+            self.image = self.orig
+            if self.animation_sc < 6:
+                self.animation_sc += 1
+            elif self.animation_sc > 6:
+                self.animation_sc -= 1
+            self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+        if key[pygame.K_LSHIFT]:
+            self.vector.value = 15
+        else:
+            self.vector.value = 10
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.vector.vx, self.vector.vy = self.vector.value * cos(math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
+
+
 pygame.init()
 pygame.display.set_caption('BOOM')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 vertical_borders = pygame.sprite.Group()
-glvector = Vector(10, 270)
+
 all_sprites.draw(screen)
+player = pygame.sprite.Group()
+plane = Plane()
 Map()
 clock = pygame.time.Clock()
 running = True
@@ -150,9 +202,12 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             btest = Bomb()
-    all_sprites.update()
+
     screen.fill((0, 0, 0))
+    all_sprites.update()
     all_sprites.draw(screen)
+    player.draw(screen)
+    player.update()
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(30)
 pygame.quit()
