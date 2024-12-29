@@ -10,6 +10,10 @@ screen = pygame.display.set_mode(size)
 center = (width // 2, height // 2)
 
 
+def posf(targetpos, size):
+    return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
+
+
 def scale(image, sizex, sizey):
     return pygame.transform.scale(image, (sizex, sizey))
 
@@ -58,6 +62,9 @@ class Vector:
     def get_xy(self):
         return (self.get_x(), self.get_y())
 
+    def get_int_xy(self):
+        return (int(self.get_x()), int(self.get_y()))
+
     def __add__(self, self2):
         vx = self.vx + self2.vx
         vy = self.vy + self2.vy
@@ -71,15 +78,21 @@ class Vector:
     def __mul__(self, k):
         return Vector(self.value * k, self.angle)
 
+    def __str__(self):
+        return f"{self.value}, {self.vx}, {self.vy}"
+
 
 class BasedMapObject(pygame.sprite.Sprite):
     def __init__(self, image, vector, pos):
         super().__init__(all_sprites)
         self.image = image
+        self.pos = pos
+        self.size = self.image.get_size()
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = pos
+        self.rect.x, self.rect.y = posf(pos, self.size)
         self.v = vector
         self.realv = self.v - glvector
+        print(self.realv, type(self))
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
@@ -87,8 +100,8 @@ class BasedMapObject(pygame.sprite.Sprite):
 
     def update(self, *args):
         self.t += self.tick() / 1000
-        print(self.t)
-        self.rect.move(self.realv.get_xy())
+        self.rect.move(*self.realv.get_int_xy())
+        self.rect.x, self.rect.y = posf(self.pos, self.size)
 
 
 class Map(BasedMapObject):
@@ -101,21 +114,23 @@ class Map(BasedMapObject):
 class Bomb(BasedMapObject):
     bomb = scale(rotate(load_image("bomb.png"), 225), 100, 100)
     boom = scale(load_image("boom.png"), 100, 100)
+    crater = scale(load_image("crater.webp"), 50, 50)
 
     def __init__(self):
         super().__init__(Bomb.bomb, glvector * 0.2, center)
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = width // 2, height // 2
+        self.size = (100, 100)
         self.flytime = 2
         self.expltime = 2
 
     def update(self, *args):
-        super().update()
-        if self.t >= self.flytime:
+        if self.t >= self.flytime and self.image == Bomb.bomb:
             self.image = Bomb.boom
-            print(0)
-        if self.t >= self.flytime + self.expltime:
-            del self
+            self.size = (100, 100)
+        if self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
+            self.image = Bomb.crater
+            self.size = (50, 50)
+        super().update()
 
 
 pygame.init()
@@ -124,9 +139,10 @@ screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 vertical_borders = pygame.sprite.Group()
-all_sprites.draw(screen)
-clock = pygame.time.Clock()
 glvector = Vector(10, 270)
+all_sprites.draw(screen)
+Map()
+clock = pygame.time.Clock()
 running = True
 while running:
     for event in pygame.event.get():
