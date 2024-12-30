@@ -79,6 +79,8 @@ class Player(pygame.sprite.Sprite):
 
 
 
+
+
 player = Player(WIDTH // 2 - 100, HEIGHT // 2 - 100)
 class Plain(pygame.sprite.Sprite):
     def __init__(self, x, y):

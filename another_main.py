@@ -1,12 +1,13 @@
 import math
 import os
+import random
 import sys
 from math import sin, cos, asin, acos
 import pygame
 
 pygame.init()
-size = width, height = 1000, 1000
-map_size = 10000, 10000
+size = width, height = 1000, 800
+map_size = 1000, 1000
 screen = pygame.display.set_mode(size)
 center = (width // 2, height // 2)
 
@@ -23,8 +24,8 @@ def rotate(image, angle):
     return pygame.transform.rotate(image, angle)
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+def load_image(name, path='data', colorkey=None):
+    fullname = os.path.join(path, name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -71,7 +72,7 @@ class Vector:
         vy = self.vy + self2.vy
         v = (vx ** 2 + vy ** 2) ** 0.5
         angle = acos(vx / v)
-        return Vector(v, angle)
+        return Vector(v, math.degrees(angle))
 
     def __sub__(self, self2):
         return self + Vector(-self2.value, self2.angle)
@@ -93,7 +94,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = posf(pos, self.size)
         self.v = vector
         self.realv = self.v - plane.vector
-        print(self.realv, type(self))
+        # print(self.realv, type(self))
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
@@ -103,7 +104,9 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t += self.tick() / 1000
         self.rect.x -= plane.vector.vx
         self.rect.y += plane.vector.vy
-        print(plane.vector.vx)
+
+
+
 
 
 class Map(BasedMapObject):
@@ -138,15 +141,70 @@ class Bomb(BasedMapObject):
         super().update()
 
 
+class Rocket(BasedMapObject):
+    image = scale(load_image('missile.png'), 23, 110)
+    def __init__(self, vector, pos, target):
+        self.target = target
+        self.orig = self.image
+        super().__init__(Rocket.image, vector, pos)
+        self.image = pygame.transform.rotate(self.image, vector.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.v2 = self.v - target.v
+        print(self.v2.angle)
+        self.distance = 3000
+
+
+    def update(self, *args):
+        if self.target:
+            x, y = self.rect.centerx, self.rect.centery
+            tx, ty = target.rect.centerx, target.rect.centery
+            # print(x, y, tx, ty)
+
+
+            self.image = pygame.transform.rotate(self.orig, self.v.angle)
+            self.rect = self.image.get_rect(center=self.rect.center)
+            self.v.vx, self.v.vy = self.v.value * cos(
+                math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
+            self.rect.y -= self.v.vx
+            self.rect.x -= self.v.vy
+        else:
+
+            self.v.angle -= 2
+            self.image = pygame.transform.rotate(self.orig, self.v.angle)
+            self.rect = self.image.get_rect(center=self.rect.center)
+            self.v.vx, self.v.vy = self.v.value * cos(
+                math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
+
+
+class Bullet(BasedMapObject):
+    image = pygame.Surface((1, 5))
+    def __init__(self, vector, pos):
+        super().__init__(Bullet.image, vector, pos)
+        self.image.fill('red')
+        self.orig = self.image
+
+    def update(self):
+        self.image = pygame.transform.rotate(self.orig, -self.v.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.v.vx, self.v.vy = self.v.value * cos(
+            math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
+        self.rect.y -= self.v.vx
+        self.rect.x -= self.v.vy
+
+
+
 class Plane(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(player)
-        self.image = load_image('0.png', -1)
+        self.image = load_image('0.png','data\plane_1', -1)
         self.animations = []
+        self.animations_shoot = []
         for i in range(-3, 4):
-            self.animations.append(load_image(f'{i}.png', -1))
+            self.animations.append(load_image(f'{i}.png', 'data\plane_1', -1))
             if i != 0:
-                self.animations.append(load_image(f'{i}.png', -1))
+                self.animations.append(load_image(f'{i}.png', 'data\plane_1', -1))
+        for i in range(-3, 4):
+            self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         # self.image = pygame.transform.scale(self.image, (100, 100))
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
@@ -154,8 +212,10 @@ class Plane(pygame.sprite.Sprite):
         self.vector = Vector(10, 90)
         self.orig = self.image
         self.animation_sc = 6
+        self.prev_t = -5
 
     def update(self, *args, **kwargs):
+        # print(self.vector)
         key = pygame.key.get_pressed()
         if key[pygame.K_a]:
             self.vector.angle += 4 - self.animation_sc // 2
@@ -181,6 +241,35 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.vector.vx, self.vector.vy = self.vector.value * cos(
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
+        if key[pygame.K_SPACE]:
+            angle_rad = math.radians(-self.vector.angle - 90)
+            new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+            new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+            Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+            new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+            new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+            Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+            self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
+            self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
+
+        if key[pygame.K_f]:
+            if int(map.t) - self.prev_t >= 1:
+                Rocket(Vector(20, self.vector.angle - 90), self.rect.center, target)
+                self.prev_t = map.t
+            else:
+                print('Ракета перезаряжаются')
+
+
+
+
+
+
+
+class Target(BasedMapObject):
+    image = scale(load_image('plank.jpeg'), 200, 200)
+
+    def __init__(self):
+        super().__init__(Target.image, Vector(), (500, 500))
 
 
 pygame.init()
@@ -189,11 +278,15 @@ screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 vertical_borders = pygame.sprite.Group()
-
-all_sprites.draw(screen)
 player = pygame.sprite.Group()
+
 plane = Plane()
-Map()
+map = Map()
+target = Target()
+all_sprites.draw(screen)
+
+
+
 clock = pygame.time.Clock()
 running = True
 while running:
