@@ -161,18 +161,15 @@ class Rocket(BasedMapObject):
         super().__init__(Rocket.image, vector, pos)
         self.image = pygame.transform.rotate(self.image, vector.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.v2 = self.v - target.v
-        print(self.v2.angle)
         self.distance = 3000
+
 
 
     def update(self, *args):
         if self.target:
             x, y = self.rect.centerx, self.rect.centery
             tx, ty = target.rect.centerx, target.rect.centery
-            # print(x, y, tx, ty)
-
-
+            # print(x - tx, y - ty)
             self.image = pygame.transform.rotate(self.orig, self.v.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.v.vx, self.v.vy = self.v.value * cos(
@@ -180,8 +177,6 @@ class Rocket(BasedMapObject):
             self.rect.y -= self.v.vx
             self.rect.x -= self.v.vy
         else:
-
-            self.v.angle -= 2
             self.image = pygame.transform.rotate(self.orig, self.v.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.v.vx, self.v.vy = self.v.value * cos(
