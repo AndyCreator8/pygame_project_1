@@ -2,7 +2,7 @@ import math
 import os
 import random
 import sys
-from math import sin, cos, asin, acos
+from math import sin, cos, asin, acos, degrees, radians
 import pygame
 
 pygame.init()
@@ -53,7 +53,7 @@ class Vector:
     def __init__(self, value=0, angle=0):
         self.value = value
         self.angle = angle
-        self.vx, self.vy = self.value * cos(math.radians(angle)), self.value * sin(math.radians(angle))
+        self.vx, self.vy = self.value * cos(radians(angle)), self.value * sin(radians(angle))
 
     def get_x(self):
         return self.vx
@@ -72,7 +72,7 @@ class Vector:
         vy = self.vy + self2.vy
         v = (vx ** 2 + vy ** 2) ** 0.5
         angle = acos(vx / v)
-        return Vector(v, math.degrees(angle))
+        return Vector(v, degrees(angle))
 
     def __sub__(self, self2):
         return self + Vector(-self2.value, self2.angle)
@@ -82,6 +82,18 @@ class Vector:
 
     def __str__(self):
         return f"{self.value}, {self.vx}, {self.vy}"
+
+    def findangle(self, self2, mode="cos"):
+        vx1, vy1 = self.get_xy()
+        vx2, vy2 = self2.get_xy()
+        v1, v2 = self.value, self2.value
+        cosgamma = (vx1 * vx2 + vy1 * vy2) / (v1 * v2)
+        if mode == "cos":
+            return cosgamma
+        elif mode == "sin":
+            return sin(acos(cosgamma))
+        elif mode == "angle":
+            return degrees(acos(cosgamma))
 
 
 class BasedMapObject(pygame.sprite.Sprite):
@@ -98,7 +110,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick()
+        self.tick = lambda: self.clock.tick(60)
 
     def update(self, *args):
         self.t += self.tick() / 1000
