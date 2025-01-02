@@ -119,9 +119,6 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.rect.y += plane.vector.vy
 
 
-
-
-
 class Map(BasedMapObject):
     mapim = scale(load_image("map.jpg"), *map_size)
 
@@ -202,7 +199,6 @@ class Bullet(BasedMapObject):
         self.rect.x -= self.v.vy
 
 
-
 class Plane(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(player)
@@ -216,20 +212,36 @@ class Plane(pygame.sprite.Sprite):
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         # self.image = pygame.transform.scale(self.image, (100, 100))
+        self.t = 0
+        self.clock = pygame.time.Clock()
+        self.clock.tick()
+        self.tick = lambda: self.clock.tick(60)
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
-        self.maxspeed = 20
+        self.shiftcoef = 1.25
+        self.maxspeed = 10
         self.throttle = 1
         self.speed = self.maxspeed * self.throttle
-        self.vector = Vector(self.maxspeed, 90)
+        self.vector = Vector(self.speed, 90)
         self.orig = self.image
         self.animation_sc = 6
         self.prev_t = -5
+        self.deltat = 0
 
     def update(self, *args, **kwargs):
+        self.deltat = self.tick() / 1000
+        self.t += self.deltat
         # print(self.vector)
         key = pygame.key.get_pressed()
+        if key[pygame.K_w]:
+            if self.throttle + self.deltat / 10 <= 1:
+                self.throttle += self.deltat / 10
+                print(self.speed, self.throttle)
+        elif key[pygame.K_s]:
+            if self.throttle - self.deltat / 10 >= 0.5:
+                self.throttle -= self.deltat / 10
+                print(self.speed, self.throttle)
         if key[pygame.K_a]:
             self.vector.angle += 4 - self.animation_sc // 2
             self.animation_sc -= 1 if self.animation_sc > 0 else 0
@@ -247,10 +259,11 @@ class Plane(pygame.sprite.Sprite):
             elif self.animation_sc > 6:
                 self.animation_sc -= 1
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+        self.speed = self.maxspeed * self.throttle
         if key[pygame.K_LSHIFT]:
-            self.vector.value = self.speed * 1.5
+            self.vector.value = self.speed * self.shiftcoef
         else:
-            self.vector.value = 10
+            self.vector.value = self.speed
         self.rect = self.image.get_rect(center=self.rect.center)
         self.vector.vx, self.vector.vy = self.vector.value * cos(
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
@@ -265,6 +278,17 @@ class Plane(pygame.sprite.Sprite):
             else:
                 print('Ракета перезаряжаются')
 
+    def fire(self):
+        angle_rad = math.radians(-self.vector.angle - 90)
+        new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+        new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+        Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+        new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+        new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+        Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+        self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
+        self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
+
 
 
 
@@ -276,6 +300,13 @@ class Target(BasedMapObject):
 
     def __init__(self):
         super().__init__(Target.image, Vector(), (500, 500))
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, size, pos):
+        self.add(all_sprites)
+        super().__init__()
+
 
 
 pygame.init()
@@ -305,15 +336,7 @@ while running:
         elif event.type == pygame.MOUSEBUTTONUP:
             firing = False
     if firing:
-        angle_rad = math.radians(-plane.vector.angle - 90)
-        new_x = plane.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-        new_y = plane.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(20, plane.vector.angle - 90), (new_x, new_y))
-        new_x = plane.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-        new_y = plane.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(20, plane.vector.angle - 90), (new_x, new_y))
-        plane.image = random.choice(plane.animations_shoot[plane.animation_sc // 2])
-        plane.image = pygame.transform.rotate(plane.image, plane.vector.angle - 90)
+        plane.fire()
 
     screen.fill((0, 0, 0))
     all_sprites.update()
