@@ -148,6 +148,7 @@ class Bomb(BasedMapObject):
     def update(self, *args):
         super().update()
         if self.t >= self.flytime and self.image == self.bomb:
+            self.v = Vector()
             self.image = Bomb.boom
             self.size = (100, 100)
         if self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
