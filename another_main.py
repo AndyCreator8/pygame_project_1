@@ -107,6 +107,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.size = self.image.get_size()
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = posf(pos, self.size)
+        self.centerpos = pos
         self.v = vector
         self.realv = self.v - plane.vector
         # print(self.realv, type(self))
@@ -118,8 +119,10 @@ class BasedMapObject(pygame.sprite.Sprite):
     def update(self, *args):
         self.realv = self.v - plane.vector
         self.t += self.tick() / 1000
-        self.rect.x += int(self.realv.get_x())
-        self.rect.y += int(self.realv.get_y())
+        # Move object
+        self.centerpos = (self.centerpos[0] + int(self.realv.get_x()), self.centerpos[1] + int(self.realv.get_y()))
+        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
 
@@ -190,6 +193,7 @@ class Rocket(BasedMapObject):
 
 class Bullet(BasedMapObject):
     image = pygame.Surface((1, 5))
+
     def __init__(self, vector, pos):
         super().__init__(Bullet.image, vector, pos)
         self.image.fill('white')
@@ -200,8 +204,9 @@ class Bullet(BasedMapObject):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.v.vx, self.v.vy = self.v.value * cos(
             math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
-        self.rect.y -= self.v.vx
-        self.rect.x -= self.v.vy
+        super().update()
+        # self.rect.y -= self.v.vx
+        # self.rect.x -= self.v.vy
 
 
 class Plane(pygame.sprite.Sprite):
@@ -217,22 +222,27 @@ class Plane(pygame.sprite.Sprite):
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         # self.image = pygame.transform.scale(self.image, (100, 100))
+        self.bulletspeed = 20
+
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
         self.tick = lambda: self.clock.tick(60)
+        self.deltat = 0
+
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
+
         self.shiftcoef = 1.25
         self.maxspeed = 10
         self.throttle = 1
         self.speed = self.maxspeed * self.throttle
         self.vector = Vector(self.speed, 90)
+
         self.orig = self.image
         self.animation_sc = 6
         self.prev_t = -5
-        self.deltat = 0
 
     def update(self, *args, **kwargs):
         self.deltat = self.tick() / 1000
@@ -242,11 +252,10 @@ class Plane(pygame.sprite.Sprite):
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
-                print(self.speed, self.throttle)
         elif key[pygame.K_s]:
             if self.throttle - self.deltat / 10 >= 0.5:
                 self.throttle -= self.deltat / 10
-                print(self.speed, self.throttle)
+
         if key[pygame.K_a]:
             self.vector.angle += 4 - self.animation_sc // 2
             self.animation_sc -= 1 if self.animation_sc > 0 else 0
@@ -288,10 +297,10 @@ class Plane(pygame.sprite.Sprite):
         angle_rad = math.radians(-self.vector.angle - 90)
         new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
         new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(20, self.vector.angle - 90), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
         self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
 
