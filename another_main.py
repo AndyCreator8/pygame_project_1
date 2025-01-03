@@ -221,6 +221,9 @@ class Plane(pygame.sprite.Sprite):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         # self.image = pygame.transform.scale(self.image, (100, 100))
         self.bulletspeed = 20
+        self.bombing = False
+        self.bombt = 0
+        self.crosst = 0.05
 
         self.t = 0
         self.clock = pygame.time.Clock()
@@ -260,11 +263,13 @@ class Plane(pygame.sprite.Sprite):
             self.animation_sc -= 1 if self.animation_sc > 0 else 0
             self.image = self.animations[self.animation_sc]
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+
         elif key[pygame.K_d]:
             self.vector.angle -= self.animation_sc // 4
             self.animation_sc += 1 if self.animation_sc < 12 else 0
             self.image = self.animations[self.animation_sc]
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+
         else:
             self.image = self.orig
             if self.animation_sc < 6:
@@ -272,7 +277,9 @@ class Plane(pygame.sprite.Sprite):
             elif self.animation_sc > 6:
                 self.animation_sc -= 1
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
+
         self.speed = self.maxspeed * self.throttle
+
         if key[pygame.K_LSHIFT]:
             self.vector.value = self.speed * self.shiftcoef
         else:
@@ -282,7 +289,11 @@ class Plane(pygame.sprite.Sprite):
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
 
         if key[pygame.K_SPACE]:
+            self.bombing = True
+            self.bombt = self.t
             Bomb()
+        elif self.t - self.bombt >= self.crosst:
+            self.bombing = False
 
         if key[pygame.K_f]:
             if int(map.t) - self.prev_t >= 1:
@@ -308,7 +319,10 @@ class TargetCross(pygame.sprite.Sprite):
 
     def __init__(self):
         super().__init__(all_sprites)
-        self.image = TargetCross.image
+        self.image1 = TargetCross.image
+        self.size2 = (125, 125)
+        self.image2 = scale(self.image1, *self.size2)
+        self.image = self.image1
         self.size = self.image.get_size()
         self.rect = self.image.get_rect()
         self.posvector = plane.vector * 20
@@ -319,7 +333,12 @@ class TargetCross(pygame.sprite.Sprite):
     def update(self, *args):
         self.posvector = plane.vector * 20
         self.centerpos = (center[0] + int(self.posvector.vx), center[1] - int(self.posvector.vy))
-        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+        if plane.bombing:
+            self.image = self.image2
+            self.rect.x, self.rect.y = posf(self.centerpos, self.size2)
+        else:
+            self.image = self.image1
+            self.rect.x, self.rect.y = posf(self.centerpos, self.size)
         print(self.rect.x, self.rect.y)
 
 
