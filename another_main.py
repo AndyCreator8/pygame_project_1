@@ -305,6 +305,19 @@ class Plane(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
 
 
+class TargetCross(pygame.sprite.Sprite):
+    image = scale(load_image("targetcross.png"), 100, 100)
+
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.image = TargetCross.image
+        self.rect = self.image.get_rect()
+        self.posvector = plane.vector * 0.2
+        self.rect.x, self.rect.y = center[0] + self.posvector.vx, center[1] + self.posvector.vy
+
+    def update(self, *args):
+        self.posvector = plane.vector * 0.2
+        self.rect.x, self.rect.y = center[0] + self.posvector.vx, center[1] + self.posvector.vy
 
 
 
@@ -333,6 +346,7 @@ vertical_borders = pygame.sprite.Group()
 player = pygame.sprite.Group()
 
 plane = Plane()
+tcr = TargetCross()
 map = Map()
 target = Target()
 all_sprites.draw(screen)
