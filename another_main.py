@@ -162,7 +162,8 @@ class Bomb(BasedMapObject):
 
 
 class Rocket(BasedMapObject):
-    image = scale(load_image('missile.png'), 23, 110)
+    image = rotate(scale(load_image('missile.png'), 23, 110), 270)
+
     def __init__(self, vector, pos, target):
         self.target = target
         self.orig = self.image
@@ -170,8 +171,6 @@ class Rocket(BasedMapObject):
         self.image = pygame.transform.rotate(self.image, vector.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.distance = 3000
-
-
 
     def update(self, *args):
         if self.target:
@@ -182,8 +181,7 @@ class Rocket(BasedMapObject):
             self.rect = self.image.get_rect(center=self.rect.center)
             self.v.vx, self.v.vy = self.v.value * cos(
                 math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
-            self.rect.y -= self.v.vx
-            self.rect.x -= self.v.vy
+            super().update()
         else:
             self.image = pygame.transform.rotate(self.orig, self.v.angle)
             self.rect = self.image.get_rect(center=self.rect.center)
@@ -234,6 +232,7 @@ class Plane(pygame.sprite.Sprite):
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
 
+
         self.shiftcoef = 1.25
         self.maxspeed = 10
         self.throttle = 1
@@ -281,14 +280,13 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.vector.vx, self.vector.vy = self.vector.value * cos(
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
-        print(self.vector.vx, self.vector.vy)
 
         if key[pygame.K_SPACE]:
             Bomb()
 
         if key[pygame.K_f]:
             if int(map.t) - self.prev_t >= 1:
-                Rocket(Vector(20, self.vector.angle - 90), self.rect.center, target)
+                Rocket(Vector(20, self.vector.angle), self.rect.center, target)
                 self.prev_t = map.t
             else:
                 print('Ракета перезаряжаются')
@@ -311,13 +309,18 @@ class TargetCross(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
         self.image = TargetCross.image
+        self.size = self.image.get_size()
         self.rect = self.image.get_rect()
-        self.posvector = plane.vector * 0.2
-        self.rect.x, self.rect.y = center[0] + self.posvector.vx, center[1] + self.posvector.vy
+        self.posvector = plane.vector * 20
+        self.centerpos = (center[0] + int(self.posvector.vx), center[1] - int(self.posvector.vy))
+        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+        print(self.rect.x, self.rect.y)
 
     def update(self, *args):
-        self.posvector = plane.vector * 0.2
-        self.rect.x, self.rect.y = center[0] + self.posvector.vx, center[1] + self.posvector.vy
+        self.posvector = plane.vector * 20
+        self.centerpos = (center[0] + int(self.posvector.vx), center[1] - int(self.posvector.vy))
+        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+        print(self.rect.x, self.rect.y)
 
 
 
@@ -346,8 +349,8 @@ vertical_borders = pygame.sprite.Group()
 player = pygame.sprite.Group()
 
 plane = Plane()
-tcr = TargetCross()
 map = Map()
+tcr = TargetCross()
 target = Target()
 all_sprites.draw(screen)
 
