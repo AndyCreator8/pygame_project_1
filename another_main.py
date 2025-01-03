@@ -71,8 +71,11 @@ class Vector:
         vx = self.vx + self2.vx
         vy = self.vy + self2.vy
         v = (vx ** 2 + vy ** 2) ** 0.5
-        angle = acos(vx / v)
-        return Vector(v, degrees(angle))
+        angle = degrees(acos(vx / v))
+        if vy > 0:
+            angle = 360 - angle
+        new = Vector(v, angle)
+        return new
 
     def __sub__(self, self2):
         return self + Vector(-self2.value, self2.angle)
@@ -115,8 +118,10 @@ class BasedMapObject(pygame.sprite.Sprite):
     def update(self, *args):
         self.realv = self.v - plane.vector
         self.t += self.tick() / 1000
-        self.rect.x -= plane.vector.vx
-        self.rect.y += plane.vector.vy
+        self.rect.x += int(self.realv.get_x())
+        self.rect.y += int(self.realv.get_y())
+        # self.rect.x -= plane.vector.vx
+        # self.rect.y += plane.vector.vy
 
 
 class Map(BasedMapObject):
@@ -187,7 +192,7 @@ class Bullet(BasedMapObject):
     image = pygame.Surface((1, 5))
     def __init__(self, vector, pos):
         super().__init__(Bullet.image, vector, pos)
-        self.image.fill('red')
+        self.image.fill('white')
         self.orig = self.image
 
     def update(self):
@@ -267,6 +272,7 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.vector.vx, self.vector.vy = self.vector.value * cos(
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
+        print(self.vector.vx, self.vector.vy)
 
         if key[pygame.K_SPACE]:
             Bomb()
