@@ -248,11 +248,12 @@ class Bullet(BasedMapObject):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.v.vx, self.v.vy = self.v.value * cos(
             math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
-        super().update()
+
         # self.rect.y -= self.v.vx
         # self.rect.x -= self.v.vy
         if self.killed is False:
-            self.image = pygame.transform.rotate(self.orig, -self.v.angle)
+            super().update()
+            self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
             self.rect = self.image.get_rect(center=self.rect.center)
             self.v.angle += random.choice(range(-3, 4))
             self.v.vx, self.v.vy = self.v.value * sin(
