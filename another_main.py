@@ -225,41 +225,23 @@ class Rocket(pygame.sprite.Sprite):
             self.kill()
 
 
-class Bullet(pygame.sprite.Sprite):
+class Bullet(BasedMapObject):
     image = pygame.Surface((1, 5))
     def __init__(self, vector, pos):
-        self.v = vector
-        self.rect = self.image.get_rect()
-        self.size = self.image.get_size()
-        self.rect.x, self.rect.y = posf(pos, self.size)
-        super().__init__(bullets)
+        super().__init__(Bullet.image, vector, pos)
         self.image.fill('white')
         self.orig = self.image
-        self.explosion_imgs = [scale(load_image(f'{i // 2}.png', 'data\explosion_animation', -1), 20, 20) for i in range(22)]
-        self.animation_sc = 0
-        self.killed = False
 
     def update(self):
-        if self.killed is False:
-            self.image = pygame.transform.rotate(self.orig, -self.v.angle)
-            self.rect = self.image.get_rect(center=self.rect.center)
-            self.v.angle += random.choice(range(-3, 4))
-            self.v.vx, self.v.vy = self.v.value * sin(
-                math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
-            self.rect.y -= self.v.vy
-            self.rect.x -= self.v.vx
-            if pygame.sprite.spritecollideany(self, blocks):
-                self.killed = True
-        else:
-            self.explosion()
-
-    def explosion(self):
-        self.image = self.explosion_imgs[self.animation_sc]
-        self.animation_sc += 1
-        self.rect.x -= plane.vector.vx
-        self.rect.y += plane.vector.vy
-        if self.animation_sc == 22:
-            self.kill()
+        self.image = pygame.transform.rotate(self.orig, -self.v.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.v.vx, self.v.vy = self.v.value * cos(
+            math.radians(self.v.angle)), self.v.value * sin(math.radians(self.v.angle))
+        self.rect.y -= self.v.vx
+        self.rect.x -= self.v.vy
+        super().update()
+        # self.rect.y -= self.v.vx
+        # self.rect.x -= self.v.vy
 
 
 class Plane(pygame.sprite.Sprite):
@@ -361,10 +343,11 @@ class Plane(pygame.sprite.Sprite):
         angle_rad = math.radians(-self.vector.angle - 90)
         new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle - 90), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
         new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle - 90), (new_x, new_y))
+
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
         self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
 
