@@ -4,7 +4,6 @@ import random
 import sys
 from math import sin, cos, asin, acos, degrees, radians
 import pygame
-from Scripts.activate_this import prev_length
 
 pygame.init()
 size = width, height = 1000, 800
@@ -147,17 +146,23 @@ class Bomb(BasedMapObject):
         self.rect = self.image.get_rect()
         self.rect.move(*self.realv.get_int_xy())
         self.rect.x, self.rect.y = posf(self.pos, self.size)
+        self.bombsize = 100
         self.size = (100, 100)
         self.flytime = 2
         self.expltime = 2
 
     def update(self, *args):
         super().update()
-        if self.t >= self.flytime and self.image == self.bomb:
+        if self.t < self.flytime:
+            self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 400)))
+            self.size = (self.bombsize, self.bombsize)
+            self.image = scale(self.bomb, *self.size)
+            self.bomb = self.image
+        elif self.t >= self.flytime and self.image == self.bomb:
             self.v = Vector()
             self.image = Bomb.boom
             self.size = (100, 100)
-        if self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
+        elif self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
             self.image = Bomb.crater
             self.size = (50, 50)
 
@@ -285,9 +290,14 @@ class Plane(pygame.sprite.Sprite):
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         # self.image = pygame.transform.scale(self.image, (100, 100))
-        self.bulletspeed = 20
+        self.bulletspeed = 50
         self.bombing = False
+        self.bomblimit = 10
+        self.autobombing = False
+        self.spamenabled = False
+        self.bombenabled = True
         self.bombt = 0
+        self.bombfr = 0.25
         self.crosst = 0.05
 
         self.t = 0
@@ -299,7 +309,6 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
-
 
         self.shiftcoef = 1.25
         self.maxspeed = 10
@@ -353,11 +362,16 @@ class Plane(pygame.sprite.Sprite):
         self.vector.vx, self.vector.vy = self.vector.value * cos(
             math.radians(self.vector.angle)), self.vector.value * sin(math.radians(self.vector.angle))
 
-        if key[pygame.K_SPACE]:
+        if key[pygame.K_SPACE] and self.bombenabled and self.bomblimit > 0:
             self.bombing = True
             self.bombt = self.t
             Bomb()
-        elif self.t - self.bombt >= self.crosst:
+            if not self.spamenabled:
+                self.bombenabled = False
+                self.bomblimit -= 1
+        if self.t - self.bombt >= self.bombfr and not self.bombenabled:
+            self.bombenabled = True
+        if self.t - self.bombt >= self.crosst:
             self.bombing = False
 
         if key[pygame.K_f]:
@@ -390,13 +404,14 @@ class TargetCross(pygame.sprite.Sprite):
         self.image = self.image1
         self.size = self.image.get_size()
         self.rect = self.image.get_rect()
-        self.posvector = plane.vector * 20
+        self.coef = 16
+        self.posvector = plane.vector * self.coef
         self.centerpos = (center[0] + int(self.posvector.vx), center[1] - int(self.posvector.vy))
         self.rect.x, self.rect.y = posf(self.centerpos, self.size)
         # print(self.rect.x, self.rect.y)
 
     def update(self, *args):
-        self.posvector = plane.vector * 20
+        self.posvector = plane.vector * self.coef
         self.centerpos = (center[0] + int(self.posvector.vx), center[1] - int(self.posvector.vy))
         if plane.bombing:
             self.image = self.image2
@@ -405,7 +420,6 @@ class TargetCross(pygame.sprite.Sprite):
             self.image = self.image1
             self.rect.x, self.rect.y = posf(self.centerpos, self.size)
         # print(self.rect.x, self.rect.y)
-
 
 
 class Enemy(BasedMapObject):
@@ -429,6 +443,8 @@ class Enemy(BasedMapObject):
         # self.image = pygame.transform.rotate(self.orig, self.v.angle)
         # self.rect = self.image.get_rect(center=self.rect.center)
         # self.v.vx, self.v.vy = self.v.value * cos(radians(self.v.angle)), self.v.value * sin(radians(self.v.angle))
+
+
 class Target(BasedMapObject):
     image = scale(load_image('plank.jpeg'), 200, 200)
 
@@ -436,12 +452,10 @@ class Target(BasedMapObject):
         super().__init__(Target.image, Vector(), (500, 500))
 
 
-
 class Button(pygame.sprite.Sprite):
     def __init__(self, size, pos):
         self.add(all_sprites)
         super().__init__()
-
 
 
 pygame.init()
@@ -461,6 +475,8 @@ target = Target()
 all_sprites.draw(screen)
 enemy = Enemy()
 enemies = pygame.sprite.Group()
+pygame.mixer_music.load("salam.mp3")
+pygame.mixer_music.play()
 enemies.add(enemy)
 blocks.add(target)
 
