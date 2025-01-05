@@ -454,7 +454,7 @@ class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/plane_2', -1)
 
     def __init__(self):
-        super().__init__(Enemy.image, Vector(10, 0), (500, 500))
+        super().__init__(Enemy.image, Vector(5, 0), (500, 500))
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
