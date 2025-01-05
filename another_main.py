@@ -2,7 +2,7 @@ import math
 import os
 import random
 import sys
-from math import sin, cos, asin, acos, degrees, radians
+from math import sin, cos, acos, degrees, radians
 import pygame
 
 pygame.init()
@@ -121,7 +121,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t += self.tick() / 1000
         # Move object
         self.centerpos = (self.centerpos[0] + int(self.realv.get_x()), self.centerpos[1] + int(self.realv.get_y()))
-        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+        self.rect.centerx, self.rect.centery = self.centerpos
 
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
@@ -169,6 +169,7 @@ class Bomb(BasedMapObject):
 
 class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
+
     def __init__(self, vector, pos, target):
         self.target = target
         self.orig = self.image
@@ -185,7 +186,6 @@ class Rocket(pygame.sprite.Sprite):
         self.v.vx, self.v.vy = self.v.value * sin(
             math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
         self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
-
 
     def update(self, *args):
         if self.killed is False:
@@ -289,7 +289,6 @@ class Plane(pygame.sprite.Sprite):
                 self.animations.append(load_image(f'{i}.png', 'data\plane_1', -1))
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
-        # self.image = pygame.transform.scale(self.image, (100, 100))
         self.bulletspeed = 50
         self.bombing = False
         self.bomblimit = 10
@@ -323,7 +322,6 @@ class Plane(pygame.sprite.Sprite):
     def update(self, *args, **kwargs):
         self.deltat = self.tick() / 1000
         self.t += self.deltat
-        # print(self.vector)
         key = pygame.key.get_pressed()
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
@@ -423,7 +421,8 @@ class TargetCross(pygame.sprite.Sprite):
 
 
 class Enemy(BasedMapObject):
-    image = load_image('0.png' ,'data/plane_2', -1)
+    image = load_image('0.png', 'data/plane_2', -1)
+
     def __init__(self):
         super().__init__(Enemy.image, Vector(5, 0), (500, 500))
 
@@ -437,12 +436,14 @@ class Enemy(BasedMapObject):
         self.fire_rate = -1
         self.prev_t = -5
 
+    def update(self):
+        super().update()
+        self.move()
+
     def move(self):
-        pass
-        # self.v.angle -= 3
-        # self.image = pygame.transform.rotate(self.orig, self.v.angle)
-        # self.rect = self.image.get_rect(center=self.rect.center)
-        # self.v.vx, self.v.vy = self.v.value * cos(radians(self.v.angle)), self.v.value * sin(radians(self.v.angle))
+        self.v = Vector(self.v.value, self.v.angle - 1)
+        self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
+        self.rect = self.image.get_rect(center=self.centerpos)
 
 
 class Target(BasedMapObject):
@@ -475,8 +476,6 @@ target = Target()
 all_sprites.draw(screen)
 enemy = Enemy()
 enemies = pygame.sprite.Group()
-pygame.mixer_music.load("salam.mp3")
-pygame.mixer_music.play()
 enemies.add(enemy)
 blocks.add(target)
 
@@ -502,7 +501,6 @@ while running:
     rockets.update()
     player.draw(screen)
     player.update()
-    enemy.move()
     bullets.draw(screen)
     bullets.update()
     pygame.display.flip()
