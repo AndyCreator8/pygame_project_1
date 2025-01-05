@@ -4,7 +4,6 @@ import random
 import sys
 from math import sin, cos, asin, acos, degrees, radians
 import pygame
-from Scripts.activate_this import prev_length
 
 pygame.init()
 size = width, height = 1000, 800
