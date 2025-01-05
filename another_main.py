@@ -178,6 +178,7 @@ class Rocket(pygame.sprite.Sprite):
         self.killed = False
         self.animation_sc = 0
         self.image = pygame.transform.rotate(self.image, vector.angle)
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.size = self.image.get_size()
         self.rect.x, self.rect.y = posf(pos, self.size)
@@ -202,9 +203,12 @@ class Rocket(pygame.sprite.Sprite):
             if self.distance <= 0:
                 self.kill()
             self.image = pygame.transform.rotate(self.orig, self.v.angle)
+            self.mask = pygame.mask.from_surface(self.image)
             self.rect = self.image.get_rect(center=self.rect.center)
             if pygame.sprite.spritecollideany(self, enemies):
-                self.killed = True
+                t = pygame.sprite.spritecollideany(self, enemies)
+                if pygame.sprite.collide_mask(self, t):
+                    self.killed = True
         else:
             self.explotion()
 
@@ -223,9 +227,10 @@ class Rocket(pygame.sprite.Sprite):
 
     def explotion(self):
         self.image = self.explosion_imgs[self.animation_sc]
+        self.rect = self.image.get_rect()
+        self.rect.center = self.target.rect.center
         self.animation_sc += 1
-        self.rect.x -= plane.vector.vx
-        self.rect.y += plane.vector.vy
+
         if self.animation_sc == 22:
             self.kill()
 
@@ -263,8 +268,10 @@ class Bullet(BasedMapObject):
             self.v.angle += random.choice(range(-3, 4))
             self.v.vx, self.v.vy = self.v.value * sin(
                 math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
-            if pygame.sprite.spritecollideany(self, blocks):
-                self.killed = True
+            if pygame.sprite.spritecollideany(self, enemies):
+                t = pygame.sprite.spritecollideany(self, enemies)
+                if pygame.sprite.collide_mask(self, t):
+                    self.killed = True
         else:
             self.explosion()
 
@@ -431,6 +438,7 @@ class Enemy(BasedMapObject):
         self.rect.centery = center[1]
         self.orig = self.image
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.animation_sc = 6
         self.fire_rate = -1
@@ -443,6 +451,7 @@ class Enemy(BasedMapObject):
     def move(self):
         self.v = Vector(self.v.value, self.v.angle - 1)
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.centerpos)
 
 
