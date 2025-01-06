@@ -6,7 +6,7 @@ from math import sin, cos, acos, degrees, radians
 import pygame
 
 pygame.init()
-size = width, height = 1800, 1200
+size = width, height = 1000, 800
 map_size = 10000, 10000
 screen = pygame.display.set_mode(size)
 center = (width // 2, height // 2)
@@ -211,7 +211,7 @@ class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
     def __init__(self, vector, pos, target):
-        play("rct_launch.mp3")
+        # play("rct_launch.mp3")
         self.target = target
         self.orig = self.image
         self.explosion_imgs = [load_image(f'{i // 2}.png', 'data\explosion_animation', -1) for i in range(22)]
@@ -251,7 +251,7 @@ class Rocket(pygame.sprite.Sprite):
                 if pygame.sprite.collide_mask(self, t):
                     self.killed = True
         else:
-            play("bomb_explotano.mp3")
+            # play("bomb_explotano.mp3")
             self.explotion()
 
     def get_angle(self, angle):
@@ -321,6 +321,7 @@ class Bullet(BasedMapObject):
                 t = pygame.sprite.spritecollideany(self, planes)
                 if pygame.sprite.collide_mask(self, t):
                     self.killed = True
+                    t.health -= self.damage
         else:
             self.explosion()
 
@@ -349,7 +350,7 @@ class Plane(pygame.sprite.Sprite):
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         self.bulletspeed = 50
-        self.blltdmg = 0.1
+        self.blltdmg = 0.5
         self.rctdmg = 15
         self.health = health
         self.bombing = False
@@ -445,10 +446,10 @@ class Plane(pygame.sprite.Sprite):
         angle_rad = math.radians(-self.vector.angle - 90)
         new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
         new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
         self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
 
@@ -491,6 +492,10 @@ class Enemy(BasedMapObject):
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
         self.orig = self.image
+
+        self.animation_sc = 0
+        self.explosion_imgs = [scale(load_image(f'{i // 2}.png', 'data\explosion_animation', -1), 20, 20) for i in
+                               range(22)]
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
@@ -503,8 +508,12 @@ class Enemy(BasedMapObject):
         self.prev_t = -5
 
     def update(self):
+        print(self.health)
         self.attack()
-        super().update()
+        if self.health <= 0:
+            self.explote()
+        else:
+            super().update()
         # self.move()
 
     def attack(self):
@@ -513,7 +522,7 @@ class Enemy(BasedMapObject):
         # self.mask = pygame.mask.from_surface(self.image)
         # self.rect = self.image.get_rect(center=self.centerpos)
         try:
-            print(self.get_angle(self.v.angle))
+            # print(self.get_angle(self.v.angle))
             if self.get_angle(self.v.angle) > 0:
                 if round(self.get_angle(self.v.angle + 2)) < round(self.get_angle(self.v.angle - 2)):
                     self.v = Vector(self.v.value, self.v.angle - 2)
@@ -528,6 +537,17 @@ class Enemy(BasedMapObject):
                 self.shoot()
         except ZeroDivisionError:
             print('error')
+
+    def explote(self):
+        print(self.animation_sc)
+        self.image = self.explosion_imgs[self.animation_sc]
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+        self.animation_sc += 1
+        # self.rect.x -= plane.vector.vx
+        # self.rect.y += plane.vector.vy
+        if self.animation_sc == 22:
+            self.kill()
 
 
         # self.v.vx, self.v.vy = self.v.value * sin(
@@ -607,7 +627,9 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             firing = True
+            play("mgsnd.mp3", -1)
         elif event.type == pygame.MOUSEBUTTONUP:
+            stop()
             firing = False
     if firing:
         plane.fire()
