@@ -1,67 +1,101 @@
-import pygame
-import math
+# Imports
 import sys
+import pygame
 
-# Инициализация Pygame
+# Configuration
 pygame.init()
+fps = 60
+fpsClock = pygame.time.Clock()
+width, height = 640, 480
+screen = pygame.display.set_mode((width, height))
 
-# Настройки экрана
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Поворот персонажа")
+font = pygame.font.SysFont('Arial', 40)
 
-# Цвета
-WHITE = (255, 255, 255)
+menu = []
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.image = pygame.image.load('plane_1.png').convert_alpha()  # Замените на путь к вашему изображению
-        self.orig_image = self.image  # Сохраняем оригинальное изображение
-        self.rect = self.image.get_rect(center=(x, y))
-        self.angle = 0
-        self.last_update = pygame.time.get_ticks()  # Время последнего обновления
-        self.update_interval = 100  # Интервал обновления в миллисекундах
+class Button():
+    def __init__(self, x, y, width, height, buttonText='Button', onclickFunction=None, onePress=False):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.onclickFunction = onclickFunction
+        self.onePress = onePress
+        self.alreadyPressed = False
+
+        self.fillColors = {
+            'normal': '#ffffff',
+            'hover': '#666666',
+            'pressed': '#333333',
+        }
+        self.buttonSurface = pygame.Surface((self.width, self.height))
+        self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+        self.buttonSurf = font.render(buttonText, True, (20, 20, 20))
+        menu.append(self)
 
     def update(self):
-        # Получаем координаты курсора мыши
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        xy = pygame.math.Vector2(mouse_x, mouse_y) - pygame.math.Vector2(self.rect.center)
+        mousePos = pygame.mouse.get_pos()
+        self.buttonSurface.fill(self.fillColors['normal'])
+        if self.buttonRect.collidepoint(mousePos):
+            self.buttonSurface.fill(self.fillColors['hover'])
+            if pygame.mouse.get_pressed(num_buttons=3)[0]:
+                self.buttonSurface.fill(self.fillColors['pressed'])
+                if self.onePress:
+                    self.onclickFunction()
+                elif not self.alreadyPressed:
+                    self.onclickFunction()
+                    self.alreadyPressed = True
+            else:
+                self.alreadyPressed = False
+        self.buttonSurface.blit(self.buttonSurf, [
+            self.buttonRect.width / 2 - self.buttonSurf.get_rect().width / 2,
+            self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
+        ])
+        screen.blit(self.buttonSurface, self.buttonRect)
 
-        # Вычисляем угол поворота
-        target_angle = math.degrees(math.atan2(-xy.y, xy.x)) - 90
 
-        now = pygame.time.get_ticks()
-        if now - self.last_update > self.update_interval:
-            self.last_update = now
+class Label():
+    def __init__(self, x, y, width, height, labelText='Text'):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
-            # Поворачиваем изображение спрайта
-            self.angle = target_angle
-            self.image = pygame.transform.rotate(self.orig_image, -self.angle)
-            self.rect = self.image.get_rect(center=self.rect.center)
+        self.fillColors = {
+            'normal': '#ffffff',
+            'hover': '#666666',
+            'pressed': '#333333',
+        }
+        self.labelSurface = pygame.Surface((self.width, self.height))
+        self.labelRect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect.topleft)
+        self.labelSurf = font.render(labelText, True, (20, 20, 20))
+        menu.append(self)
 
-clock = pygame.time.Clock()
-# Создаем игрока
-player = Player(WIDTH // 2, HEIGHT // 2)
+    def update(self):
+        self.labelSurface.fill(self.fillColors['normal'])
+        self.labelSurface.blit(self.labelSurf, [
+            self.labelRect.width / 2 - self.labelSurf.get_rect().width / 2,
+            self.labelRect.height / 2 - self.labelSurf.get_rect().height / 2
+        ])
+        screen.blit(self.labelSurface, self.labelRect)
 
-# Главный игровой цикл
-running = True
-while running:
+
+def myFunction():
+    print('Button Pressed')
+
+
+Button(30, 30, 400, 100, 'Button One (onePress)', myFunction)
+Label(30, 140, 400, 100, 'Text')
+while True:
+    screen.fill((20, 20, 20))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-
-    # Обновление игрока и отрисовка на экране
-    player.update()
-
-    screen.fill(WHITE)  # Очистка экрана белым цветом
-    player.draw(screen)  # Отрисовка игрока
-    clock.tick(60)
-    pygame.display.flip()  # Обновление экрана
-
-pygame.quit()
-sys.exit()
+            pygame.quit()
+            sys.exit()
+    for object in menu:
+        object.update()
+    pygame.display.flip()
+    fpsClock.tick(fps)

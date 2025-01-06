@@ -6,7 +6,7 @@ from math import sin, cos, acos, degrees, radians
 import pygame
 
 pygame.init()
-size = width, height = 1000, 800
+size = width, height = 1800, 1200
 map_size = 10000, 10000
 screen = pygame.display.set_mode(size)
 center = (width // 2, height // 2)
@@ -45,8 +45,14 @@ def load_music(name):
     if not os.path.isfile(fullname):
         print(f"Аудиофайл '{fullname}' не найден")
         sys.exit()
-    music = pygame.mixer.music.load(fullname)
+    music = pygame.mixer_music.load(fullname)
     return music
+
+
+def play(name, volume=5):
+    music = pygame.mixer_music.load(name)
+    pygame.mixer_music.set_volume(volume)
+    pygame.mixer_music.play()
 
 
 class Text:
@@ -57,7 +63,6 @@ class Text:
         text_surface = font.render(f'FPS: {round(text)}', True, (255, 0, 0))
         text_rect = text_surface.get_rect(center=(100, 50))
         screen.blit(text_surface, text_rect)
-
 
 
 class Vector:
@@ -253,7 +258,7 @@ class Rocket(pygame.sprite.Sprite):
 class Bullet(BasedMapObject):
     image = pygame.Surface((1, 5))
 
-    def __init__(self, vector, pos):
+    def __init__(self, vector, pos, damage=0.1, spread=4):
         super().__init__(Bullet.image, vector, pos)
         self.image.fill('white')
         self.orig = self.image
@@ -268,6 +273,8 @@ class Bullet(BasedMapObject):
         self.animation_sc = 0
         self.distance = 1000
         self.killed = False
+        self.damage = damage
+        self.spread = spread
 
     def update(self):
         self.image = pygame.transform.rotate(self.orig, -self.v.angle)
@@ -285,7 +292,7 @@ class Bullet(BasedMapObject):
             super().update()
             self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
             self.rect = self.image.get_rect(center=self.rect.center)
-            self.v.angle += random.choice(range(-3, 4))
+            self.v.angle += random.choice(range(-self.spread, self.spread))
             self.v.vx, self.v.vy = self.v.value * sin(
                 math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
             if pygame.sprite.spritecollideany(self, planes):
@@ -454,7 +461,7 @@ class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/plane_2', -1)
 
     def __init__(self):
-        super().__init__(Enemy.image, Vector(5, 0), (500, 500))
+        super().__init__(Enemy.image, Vector(10, 0), (500, 500))
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
@@ -463,6 +470,8 @@ class Enemy(BasedMapObject):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.target = plane
+        self.health = 20
+        self.damage = 0.5
         self.bulletspeed = 20
         self.animation_sc = 6
         self.fire_rate = -1
@@ -471,8 +480,8 @@ class Enemy(BasedMapObject):
     def update(self):
         self.attack()
         super().update()
+        print(self.health)
         # self.move()
-
 
     def attack(self):
         # self.v = Vector(self.v.value, plane.vector.angle)
@@ -504,7 +513,6 @@ class Enemy(BasedMapObject):
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
-
 
     def get_angle(self, angle):
         self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
@@ -543,12 +551,6 @@ class Target(BasedMapObject):
         super().__init__(Target.image, Vector(), (500, 500))
 
 
-class Button(pygame.sprite.Sprite):
-    def __init__(self, size, pos):
-        self.add(all_sprites)
-        super().__init__()
-
-
 pygame.init()
 pygame.display.set_caption('BOOM')
 screen.fill((255, 255, 255))
@@ -571,7 +573,9 @@ enemies.add(enemy)
 planes.add(enemy, plane)
 blocks.add(target)
 text = Text()
-
+pygame.mixer_music.load("salam.mp3")
+pygame.mixer_music.play()
+pygame.mixer_music.set_volume(5)
 clock = pygame.time.Clock()
 firing = False
 running = True
