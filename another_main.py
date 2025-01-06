@@ -11,6 +11,7 @@ map_size = 10000, 10000
 screen = pygame.display.set_mode(size)
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 20)
+paused = True
 
 def posf(targetpos, size):
     return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
@@ -49,10 +50,28 @@ def load_music(name):
     return music
 
 
-def play(name, volume=5):
-    music = pygame.mixer_music.load(name)
+def play(name, volume=5, loops=0):
+    pygame.mixer_music.load(f"sounds/{name}")
     pygame.mixer_music.set_volume(volume)
-    pygame.mixer_music.play()
+    pygame.mixer_music.play(loops)
+    global paused
+    paused = False
+
+
+def stop():
+    global paused
+    paused = True
+    pygame.mixer_music.stop()
+
+
+def pause():
+    global paused
+    if paused:
+        pygame.mixer_music.unpause()
+        paused = False
+    else:
+        pygame.mixer_music.unpause()
+        paused = True
 
 
 class Text:
@@ -161,6 +180,7 @@ class Bomb(BasedMapObject):
 
     def __init__(self):
         super().__init__(Bomb.bomb, plane.vector * 0.2, center)
+        # play("bombsnd.mp3", volume=1)
         self.image = rotate(self.image, (plane.vector.angle + 270) % 360)
         self.bomb = self.image
         self.rect = self.image.get_rect()
@@ -168,13 +188,13 @@ class Bomb(BasedMapObject):
         self.rect.x, self.rect.y = posf(self.pos, self.size)
         self.bombsize = 100
         self.size = (100, 100)
-        self.flytime = 2
+        self.flytime = 4.75
         self.expltime = 2
 
     def update(self, *args):
         super().update()
         if self.t < self.flytime:
-            self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 400)))
+            self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 100)))
             self.size = (self.bombsize, self.bombsize)
             self.image = scale(self.bomb, *self.size)
             self.bomb = self.image
@@ -191,6 +211,7 @@ class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
     def __init__(self, vector, pos, target):
+        play("rct_launch.mp3")
         self.target = target
         self.orig = self.image
         self.explosion_imgs = [load_image(f'{i // 2}.png', 'data\explosion_animation', -1) for i in range(22)]
@@ -230,6 +251,7 @@ class Rocket(pygame.sprite.Sprite):
                 if pygame.sprite.collide_mask(self, t):
                     self.killed = True
         else:
+            play("bomb_explotano.mp3")
             self.explotion()
 
     def get_angle(self, angle):
@@ -314,7 +336,7 @@ class Bullet(BasedMapObject):
 
 
 class Plane(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, health=100):
         super().__init__(player)
         self.image = load_image('0.png','data\plane_1', -1)
         self.mask = pygame.mask.from_surface(self.image)
@@ -327,6 +349,9 @@ class Plane(pygame.sprite.Sprite):
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
         self.bulletspeed = 50
+        self.blltdmg = 0.1
+        self.rctdmg = 15
+        self.health = health
         self.bombing = False
         self.bomblimit = 10
         self.autobombing = False
@@ -480,7 +505,6 @@ class Enemy(BasedMapObject):
     def update(self):
         self.attack()
         super().update()
-        print(self.health)
         # self.move()
 
     def attack(self):
@@ -573,9 +597,7 @@ enemies.add(enemy)
 planes.add(enemy, plane)
 blocks.add(target)
 text = Text()
-pygame.mixer_music.load("salam.mp3")
-pygame.mixer_music.play()
-pygame.mixer_music.set_volume(5)
+# play("salam.mp3")
 clock = pygame.time.Clock()
 firing = False
 running = True
