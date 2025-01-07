@@ -439,8 +439,9 @@ class Plane(pygame.sprite.Sprite):
             self.bombing = False
 
         if key[pygame.K_f]:
+            enemy = self.closest()
             if int(map.t) - self.prev_t >= 1:
-                Rocket(Vector(10, self.vector.angle - 90), self.rect.center, enemy)
+                Rocket(Vector(10, self.vector.angle - 90), self.rect.center, enemy, self.rctdmg)
                 self.prev_t = map.t
             else:
                 print('Ракета перезаряжаются')
@@ -455,6 +456,11 @@ class Plane(pygame.sprite.Sprite):
         Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
         self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
+
+    def closest(self):
+        ses = [abs(x.get_vector_from_plane().value) for x in enemies.sprites()]
+        print(ses)
+        return min(enemies.sprites(), key=lambda x: abs(x.get_vector_from_plane().value))
 
 
 class TargetCross(pygame.sprite.Sprite):
@@ -635,7 +641,6 @@ class Radar(pygame.sprite.Sprite):
     def redraw(self):
         newarr = []
         for i in range(len(self.caught)):
-            print(self.caught[i], i)
             if self.angle == self.caught[i][2]:
                 self.caught[i][3].caught = False
             else:
@@ -667,7 +672,7 @@ enemy2 = Enemy(180)
 planes.add(enemy1, enemy2, plane)
 blocks.add(target)
 text = Text()
-r = Radar()
+r = Radar(range=2000)
 # play("salam.mp3")
 clock = pygame.time.Clock()
 firing = False
