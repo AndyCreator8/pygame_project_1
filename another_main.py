@@ -206,12 +206,15 @@ class Bomb(BasedMapObject):
             self.image = Bomb.crater
             self.size = (50, 50)
 
-
+sound1 = pygame.mixer.Sound('sounds/rct_launch.wav')
+exp_sound = pygame.mixer.Sound('sounds/bomb_explotano.wav')
+plane_sound = pygame.mixer.Sound('sounds/planesnd.wav')
+plane_sound.set_volume(0.2)
 class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
     def __init__(self, vector, pos, target, damage=25):
-        play("rct_launch.wav")
+        sound1.play()
         self.target = target
         self.damage = damage
         self.orig = self.image
@@ -253,7 +256,7 @@ class Rocket(pygame.sprite.Sprite):
                     self.killed = True
                     t.health -= self.damage
         else:
-            play("bomb_explotano.mp3")
+            exp_sound.play()
             self.explotion()
 
     def get_angle(self, angle):
@@ -408,7 +411,7 @@ class Plane(pygame.sprite.Sprite):
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
 
         else:
-            self.image = self.orig
+
             if self.animation_sc < 6:
                 self.animation_sc += 1
             elif self.animation_sc > 6:
@@ -501,6 +504,11 @@ class Enemy(BasedMapObject):
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
+        self.animations = []
+        for i in range(-3, 4):
+            self.animations.append(load_image(f'{i}.png', 'data\plane_2', -1))
+            if i != 0:
+                self.animations.append(load_image(f'{i}.png', 'data\plane_2', -1))
         self.orig = self.image
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
@@ -526,31 +534,35 @@ class Enemy(BasedMapObject):
     def attack(self):
         # self.v = Vector(self.v.value, plane.vector.angle)
         # self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
-        # self.mask = pygame.mask.from_surface(self.image)
-        # self.rect = self.image.get_rect(center=self.centerpos)
-        try:
 
+        try:
             if self.get_angle(self.v.angle) > 0:
-                if round(self.get_angle(self.v.angle + 2)) < round(self.get_angle(self.v.angle - 2)):
+                if round(self.get_angle(self.v.angle + 1)) <= round(self.get_angle(self.v.angle - 1)):
                     self.v = Vector(self.v.value, self.v.angle - 2)
-                elif round(self.get_angle(self.v.angle + 2)) > round(self.get_angle(self.v.angle - 2)):
+                    self.animation_sc += 1 if self.animation_sc < 12 else 0
+                    self.image = self.animations[self.animation_sc]
+
+                elif round(self.get_angle(self.v.angle + 1)) >= round(self.get_angle(self.v.angle - 1)):
                     self.v = Vector(self.v.value, self.v.angle + 2)
+                    self.animation_sc -= 1 if self.animation_sc > 0 else 0
+                    self.image = self.animations[self.animation_sc]
+
+
             elif self.get_angle(self.v.angle) < 0:
-                if round(self.get_angle(self.v.angle + 2)) < round(self.get_angle(self.v.angle - 2)):
+                if round(self.get_angle(self.v.angle + 1)) <= round(self.get_angle(self.v.angle - 1)):
                     self.v = Vector(self.v.value, self.v.angle + 2)
-                elif round(self.get_angle(self.v.angle + 2)) > round(self.get_angle(self.v.angle - 2)):
+                    self.animation_sc -= 1 if self.animation_sc > 0 else 0
+                    self.image = self.animations[self.animation_sc]
+                elif round(self.get_angle(self.v.angle + 1)) >= round(self.get_angle(self.v.angle - 1)):
                     self.v = Vector(self.v.value, self.v.angle - 2)
+                    self.animation_sc += 1 if self.animation_sc < 12 else 0
+                    self.image = self.animations[self.animation_sc]
+
             if -170 > self.get_angle(self.v.angle) > -190:
                 self.shoot()
         except ZeroDivisionError:
             print('error')
-
-
-        # self.v.vx, self.v.vy = self.v.value * sin(
-        #     math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
-        # self.rect.y -= self.v.vy
-        # self.rect.x -= self.v.vx
-        self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
+        self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
 
@@ -668,9 +680,9 @@ tcr = TargetCross()
 target = Target()
 all_sprites.draw(screen)
 enemy1 = Enemy(0)
-enemy2 = Enemy(180)
-planes.add(enemy1, enemy2, plane)
-play('planesnd.wav')
+# enemy2 = Enemy(180)
+planes.add(enemy1, plane)
+plane_sound.play(loops=-1)
 blocks.add(target)
 text = Text()
 r = Radar(range=2000)
