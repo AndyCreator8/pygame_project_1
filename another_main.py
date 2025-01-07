@@ -489,8 +489,9 @@ class TargetCross(pygame.sprite.Sprite):
 class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/plane_2', -1)
 
-    def __init__(self):
-        super().__init__(Enemy.image, Vector(10, 0), (500, 500))
+    def __init__(self, angle):
+        super().__init__(Enemy.image, Vector(10, angle), (500, 500))
+        enemies.add(self)
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
@@ -625,22 +626,22 @@ class Radar(pygame.sprite.Sprite):
             s = enemy.get_vector_from_plane()
             # print(int(s.angle), self.angle)
             if s.value < self.range and int(s.angle) - int(s.angle) % self.rtspeed == 360 - self.angle and not enemy.caught:
-                print(2)
                 posx = self.rect.centerx + (s.vx / self.range * self.r)
                 posy = self.rect.centery - (s.vy / self.range * self.r)
                 enemy.caught = True
                 self.caught.append([posx, posy, self.angle, enemy])
-                print(posx, posy)
                 pygame.draw.circle(screen, "green", (posx, posy), 5)
 
     def redraw(self):
+        newarr = []
         for i in range(len(self.caught)):
+            print(self.caught[i], i)
             if self.angle == self.caught[i][2]:
                 self.caught[i][3].caught = False
-                self.caught.pop(i)
             else:
+                newarr.append(self.caught[i])
                 pygame.draw.circle(screen, "green", tuple(self.caught[i][:2]), 5)
-
+        self.caught = newarr
 
 
 pygame.init()
@@ -655,15 +656,15 @@ rockets = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 planes = pygame.sprite.Group()
 radar = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
 plane = Plane()
 map = Map()
 tcr = TargetCross()
 target = Target()
 all_sprites.draw(screen)
-enemy = Enemy()
-enemies = pygame.sprite.Group()
-enemies.add(enemy)
-planes.add(enemy, plane)
+enemy1 = Enemy(0)
+enemy2 = Enemy(180)
+planes.add(enemy1, enemy2, plane)
 blocks.add(target)
 text = Text()
 r = Radar()
