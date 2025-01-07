@@ -210,9 +210,10 @@ class Bomb(BasedMapObject):
 class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
-    def __init__(self, vector, pos, target):
+    def __init__(self, vector, pos, target, damage=25):
         # play("rct_launch.mp3")
         self.target = target
+        self.damage = damage
         self.orig = self.image
         self.explosion_imgs = [load_image(f'{i // 2}.png', 'data\explosion_animation', -1) for i in range(22)]
         super().__init__(rockets)
@@ -244,12 +245,13 @@ class Rocket(pygame.sprite.Sprite):
             if self.distance <= 0:
                 self.kill()
             self.image = pygame.transform.rotate(self.orig, self.v.angle)
-            self.rect = self.image.get_rect(center=self.rect.center)
             self.mask = pygame.mask.from_surface(self.image)
+            self.rect = self.image.get_rect(center=self.rect.center)
             if pygame.sprite.spritecollideany(self, enemies):
                 t = pygame.sprite.spritecollideany(self, enemies)
                 if pygame.sprite.collide_mask(self, t):
                     self.killed = True
+                    t.health -= self.damage
         else:
             # play("bomb_explotano.mp3")
             self.explotion()
@@ -454,17 +456,6 @@ class Plane(pygame.sprite.Sprite):
         self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
         self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
 
-    def explote(self):
-
-        self.image = self.explosion_imgs[self.animation_sc]
-        self.rect = self.image.get_rect(center=self.rect.center)
-        self.animation_sc += 1
-        # self.rect.x -= plane.vector.vx
-        # self.rect.y += plane.vector.vy
-        if self.animation_sc == 22:
-            self.kill()
-
-
 
 class TargetCross(pygame.sprite.Sprite):
     image = scale(load_image("targetcross.png"), 100, 100)
@@ -499,7 +490,7 @@ class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/plane_2', -1)
 
     def __init__(self):
-        super().__init__(Enemy.image, Vector(5, 0), (500, 500))
+        super().__init__(Enemy.image, Vector(10, 0), (500, 500))
         self.rect = self.image.get_rect()
         self.rect.centerx = center[0]
         self.rect.centery = center[1]
@@ -507,18 +498,23 @@ class Enemy(BasedMapObject):
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.health = 0.2
+        self.caught = False
+        self.health = 20
         self.target = plane
         self.bulletspeed = 20
+        self.bltdmg = 0.1
         self.animation_sc = 6
         self.fire_rate = -1
         self.prev_t = -5
 
     def update(self):
         self.attack()
-        super().update()
+        if self.health > 0:
+            super().update()
+        else:
+            self.kill()
+        # super().update()
         # self.move()
-
 
     def attack(self):
         # self.v = Vector(self.v.value, plane.vector.angle)
@@ -548,9 +544,8 @@ class Enemy(BasedMapObject):
         # self.rect.y -= self.v.vy
         # self.rect.x -= self.v.vx
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
-        self.rect = self.image.get_rect(center=self.rect.center)
         self.mask = pygame.mask.from_surface(self.image)
-
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def get_angle(self, angle):
         self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
@@ -569,11 +564,18 @@ class Enemy(BasedMapObject):
         angle_rad = math.radians(-self.v.angle - 90)
         new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg)
         new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
         new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y))
+        Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg)
 
+    def get_vector_from_plane(self):
+        x, y = self.centerpos[0] - center[0], self.centerpos[1] - center[1]
+        s = (x ** 2 + y ** 2) ** 0.5
+        angle = degrees(acos(x / s))
+        if y > 0:
+            angle = 360 - angle
+        return Vector(s, angle)
     #
     # def move(self):
     #     self.v = Vector(self.v.value, self.v.angle)
@@ -589,11 +591,11 @@ class Target(BasedMapObject):
         super().__init__(Target.image, Vector(), (500, 500))
 
 
-
 class Radar(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, range=1000, rtspeed=4):
         super().__init__(radar)
         self.image = scale(load_image('radar.png', 'data'), 200, 200)
+        self.size = self.image.get_size()
         self.rect = self.image.get_rect()
         self.rect.x = 10
         self.rect.y = 10
@@ -601,6 +603,10 @@ class Radar(pygame.sprite.Sprite):
         self.y0 = self.rect.centery
         self.r = 80
         self.angle = 0
+        self.enemy = False
+        self.range = range
+        self.rtspeed = rtspeed
+        self.caught = []
 
     def update(self, *args, **kwargs):
         self.x = self.x0 + self.r * math.cos(math.radians(self.angle))
@@ -609,8 +615,32 @@ class Radar(pygame.sprite.Sprite):
             v = plane.rect.centerx - i.rect.centerx, plane.rect.centery - i.rect.centery
             if v[0] // self.r * math.cos(math.radians(self.angle)) == v[1] // self.r * math.sin(math.radians(self.angle)):
                 print('connected')
-        pygame.draw.line(screen, 'red', (self.x0, self.y0), (self.x, self.y), width=2)
-        self.angle += 2
+        pygame.draw.line(screen, 'green', (self.x0, self.y0), (self.x, self.y), width=2)
+        self.check()
+        self.angle = (self.angle + self.rtspeed) % 360
+        self.redraw()
+
+    def check(self):
+        for enemy in enemies.sprites():
+            s = enemy.get_vector_from_plane()
+            # print(int(s.angle), self.angle)
+            if s.value < self.range and int(s.angle) - int(s.angle) % self.rtspeed == 360 - self.angle and not enemy.caught:
+                print(2)
+                posx = self.rect.centerx + (s.vx / self.range * self.r)
+                posy = self.rect.centery - (s.vy / self.range * self.r)
+                enemy.caught = True
+                self.caught.append([posx, posy, self.angle, enemy])
+                print(posx, posy)
+                pygame.draw.circle(screen, "green", (posx, posy), 5)
+
+    def redraw(self):
+        for i in range(len(self.caught)):
+            if self.angle == self.caught[i][2]:
+                self.caught[i][3].caught = False
+                self.caught.pop(i)
+            else:
+                pygame.draw.circle(screen, "green", tuple(self.caught[i][:2]), 5)
+
 
 
 pygame.init()
