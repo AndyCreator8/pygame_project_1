@@ -442,12 +442,15 @@ class Plane(pygame.sprite.Sprite):
             self.bombing = False
 
         if key[pygame.K_f]:
-            enemy = self.closest()
-            if int(map.t) - self.prev_t >= 1:
-                Rocket(Vector(10, self.vector.angle - 90), self.rect.center, enemy, self.rctdmg)
-                self.prev_t = map.t
+            if enemies.sprites():
+                enemy = self.closest()
+                if int(map.t) - self.prev_t >= 1:
+                    Rocket(Vector(10, self.vector.angle - 90), self.rect.center, enemy, self.rctdmg)
+                    self.prev_t = map.t
+                else:
+                    print('Ракета перезаряжаются')
             else:
-                print('Ракета перезаряжаются')
+                print("Противников не обнаружено")
 
     def fire(self):
         angle_rad = math.radians(-self.vector.angle - 90)
@@ -498,12 +501,11 @@ class TargetCross(pygame.sprite.Sprite):
 class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/plane_2', -1)
 
-    def __init__(self, angle):
+    def __init__(self, angle, pos):
         super().__init__(Enemy.image, Vector(10, angle), (500, 500))
         enemies.add(self)
         self.rect = self.image.get_rect()
-        self.rect.centerx = center[0]
-        self.rect.centery = center[1]
+        self.rect.centerx, self.rect.centery = pos
         self.animations = []
         for i in range(-3, 4):
             self.animations.append(load_image(f'{i}.png', 'data\plane_2', -1))
@@ -558,7 +560,7 @@ class Enemy(BasedMapObject):
             more_angle = self.get_angle(self.v.angle + 1)[0]
             less_angle = self.get_angle(self.v.angle - 1)[0]
             if angle > 0:
-                print(self.get_angle(self.v.angle)[1])
+                # print(self.get_angle(self.v.angle)[1])
                 if round(more_angle) <= round(less_angle):
                     self.v = Vector(self.v.value, self.v.angle - 2)
                     self.animation_sc += 1 if self.animation_sc < 12 else 0
@@ -570,7 +572,7 @@ class Enemy(BasedMapObject):
                 else:
                     print('a')
             elif angle < 0:
-                print(self.get_angle(self.v.angle)[1])
+                # print(self.get_angle(self.v.angle)[1])
                 if round(more_angle) <= round(less_angle):
                     self.v = Vector(self.v.value, self.v.angle + 2)
                     self.animation_sc -= 1 if self.animation_sc > 0 else 0
@@ -715,7 +717,7 @@ tcr = TargetCross()
 target = Target()
 all_sprites.draw(screen)
 r = Radar(range=1000)
-enemy1 = Enemy(0)
+enemy1 = Enemy(0, center)
 # enemy2 = Enemy(180)
 planes.add(enemy1, plane)
 plane_sound.play(loops=-1)
