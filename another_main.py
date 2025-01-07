@@ -160,7 +160,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         # Move object
 
         self.centerpos = (self.centerpos[0] + int(self.realv.get_x()), self.centerpos[1] + int(self.realv.get_y()))
-        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
+        self.rect.x, self.rect.y = posf(self.centerpos, self.image.get_size())
 
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
