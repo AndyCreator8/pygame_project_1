@@ -160,7 +160,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         # Move object
 
         self.centerpos = (self.centerpos[0] + int(self.realv.get_x()), self.centerpos[1] + int(self.realv.get_y()))
-        self.rect.centerx, self.rect.centery = self.centerpos
+        self.rect.x, self.rect.y = posf(self.centerpos, self.size)
 
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
@@ -180,7 +180,9 @@ class Bomb(BasedMapObject):
 
     def __init__(self):
         super().__init__(Bomb.bomb, plane.vector * 0.2, center)
-        play("bombsnd.mp3", volume=1)
+        self.snd = pygame.mixer.Sound("sounds/bombsnd.wav")
+        self.snd.set_volume(0.1)
+        self.snd.play()
         self.image = rotate(self.image, (plane.vector.angle + 270) % 360)
         self.bomb = self.image
         self.rect = self.image.get_rect()
@@ -205,11 +207,15 @@ class Bomb(BasedMapObject):
         elif self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
             self.image = Bomb.crater
             self.size = (50, 50)
+            self.snd.stop()
+
 
 sound1 = pygame.mixer.Sound('sounds/rct_launch.wav')
 exp_sound = pygame.mixer.Sound('sounds/bomb_explotano.wav')
 plane_sound = pygame.mixer.Sound('sounds/planesnd.wav')
 plane_sound.set_volume(0.2)
+
+
 class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
@@ -354,6 +360,7 @@ class Plane(pygame.sprite.Sprite):
                 self.animations.append(load_image(f'{i}.png', 'data\plane_1', -1))
         for i in range(-3, 4):
             self.animations_shoot.append((load_image(f'{i}.png', 'data\plane_1_shooting', -1), load_image(f'{i} — копия.png', 'data\plane_1_shooting', -1)))
+        self.bulletlimit = 8000
         self.bulletspeed = 50
         self.blltdmg = 0.5
         self.rctdmg = 15
@@ -453,15 +460,19 @@ class Plane(pygame.sprite.Sprite):
                 print("Противников не обнаружено")
 
     def fire(self):
-        angle_rad = math.radians(-self.vector.angle - 90)
-        new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-        new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
-        new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-        new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-        Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
-        self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
-        self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
+        if self.bulletlimit > 1:
+            angle_rad = math.radians(-self.vector.angle - 90)
+            new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+            new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+            Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
+            new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+            new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+            Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
+            self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
+            self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
+            self.bulletlimit -= 2
+        else:
+            print("No ammo")
 
     def closest(self):
         ses = [abs(x.get_vector_from_plane().value) for x in enemies.sprites()]
