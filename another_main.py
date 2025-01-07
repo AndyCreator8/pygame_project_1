@@ -180,7 +180,7 @@ class Bomb(BasedMapObject):
 
     def __init__(self):
         super().__init__(Bomb.bomb, plane.vector * 0.2, center)
-        # play("bombsnd.mp3", volume=1)
+        play("bombsnd.mp3", volume=1)
         self.image = rotate(self.image, (plane.vector.angle + 270) % 360)
         self.bomb = self.image
         self.rect = self.image.get_rect()
@@ -211,7 +211,7 @@ class Rocket(pygame.sprite.Sprite):
     image = scale(load_image('missile.png'), 15, 73)
 
     def __init__(self, vector, pos, target, damage=25):
-        # play("rct_launch.mp3")
+        play("rct_launch.wav")
         self.target = target
         self.damage = damage
         self.orig = self.image
@@ -253,7 +253,7 @@ class Rocket(pygame.sprite.Sprite):
                     self.killed = True
                     t.health -= self.damage
         else:
-            # play("bomb_explotano.mp3")
+            play("bomb_explotano.mp3")
             self.explotion()
 
     def get_angle(self, angle):
@@ -670,6 +670,7 @@ all_sprites.draw(screen)
 enemy1 = Enemy(0)
 enemy2 = Enemy(180)
 planes.add(enemy1, enemy2, plane)
+play('planesnd.wav')
 blocks.add(target)
 text = Text()
 r = Radar(range=2000)
