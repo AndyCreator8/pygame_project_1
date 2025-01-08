@@ -6,12 +6,99 @@ from math import sin, cos, acos, degrees, radians
 import pygame
 
 pygame.init()
-size = width, height = 1000, 800
 map_size = 10000, 10000
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 20)
 paused = True
+menu = []
+
+
+class Button():
+    def __init__(self, x, y, width, height, color, buttonText='Button', onclickFunction=None, onePress=False):
+        self.x = x
+        self.y = y
+        self.dw = 5
+        self.dh = 5
+        self.bcolor = color
+        self.d = 30
+        self.k1, self.k2 = (max(self.bcolor) - self.d) / max(self.bcolor), (max(self.bcolor) - self.d * 2) / max(self.bcolor)
+        print(self.k1, self.k2)
+        self.bwidth = width
+        self.bheight = height
+        self.onclickFunction = onclickFunction
+        self.onePress = onePress
+        self.alreadyPressed = False
+
+        self.fillColors = {
+            'normal': self.bcolor,
+            'hover': tuple([int(i * self.k1) for i in self.bcolor]),
+            'pressed': tuple([int(i * self.k2) for i in self.bcolor])
+        }
+        self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
+        self.buttonRect = pygame.Rect(self.x, self.y, self.bwidth, self.bheight)
+
+        self.buttonSurf = font.render(buttonText, True, (20, 20, 20))
+        menu.append(self)
+
+    def update(self):
+        self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
+        self.buttonRect = pygame.Rect(self.x, self.y, self.bwidth, self.bheight)
+        mousePos = pygame.mouse.get_pos()
+        self.buttonSurface.fill(self.fillColors['normal'])
+        if self.buttonRect.collidepoint(mousePos):
+            self.buttonSurface.fill(self.fillColors['hover'])
+            if pygame.mouse.get_pressed(num_buttons=3)[0]:
+                self.buttonSurface = pygame.Surface((self.bwidth + self.dw, self.bheight + self.dh))
+                self.buttonRect = pygame.Rect(self.x - self.dw, self.y + self.dh, self.bwidth, self.bheight)
+                self.buttonSurface.fill(self.fillColors['pressed'])
+                if self.onePress:
+                    self.onclickFunction()
+                elif not self.alreadyPressed:
+                    self.onclickFunction()
+                    self.alreadyPressed = True
+            else:
+                self.alreadyPressed = False
+        self.buttonSurface.blit(self.buttonSurf, [
+            self.buttonRect.width / 2 - self.buttonSurf.get_rect().width / 2,
+            self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
+        ])
+        screen.blit(self.buttonSurface, self.buttonRect)
+
+    def updatetext(self, newtext):
+        self.buttonSurf = font.render(newtext, True, (20, 20, 20))
+
+
+class Label():
+    def __init__(self, x, y, width, height, color, labelText='Text'):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+        self.color = color
+        self.labelSurface = pygame.Surface((self.width, self.height))
+        self.labelRect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+        self.labelSurf = font.render(labelText, True, (20, 20, 20))
+        menu.append(self)
+
+    def update(self):
+        self.labelSurface.fill(self.color)
+        self.labelSurface.blit(self.labelSurf, [
+            self.labelRect.width / 2 - self.labelSurf.get_rect().width / 2,
+            self.labelRect.height / 2 - self.labelSurf.get_rect().height / 2
+        ])
+        screen.blit(self.labelSurface, self.labelRect)
+
+
+def load_game(level):
+    pass
+
+
+def load_menu():
+    title = Label()
 
 
 def posf(targetpos, size):
@@ -80,7 +167,7 @@ class Text:
         pass
 
     def draw(self, text):
-        text_surface = font.render(f'FPS: {round(text)}', True, (255, 0, 0))
+        text_surface = font.render(text, True, (255, 0, 0))
         text_rect = text_surface.get_rect(center=(100, 50))
         screen.blit(text_surface, text_rect)
 
@@ -212,9 +299,7 @@ class Bomb(BasedMapObject):
 
 
 class Rocket(pygame.sprite.Sprite):
-    image = scale(load_image('missile.png'), 15, 73)
-
-    def __init__(self, vector, pos, target, damage=25):
+    def __init__(self, vector, pos, target, damage=25, image=scale(load_image('missile.png'), 15, 73)):
         # self.add(rockets)
         self.sound = pygame.mixer.Sound('sounds/rct_launch.wav')
         self.sound.set_volume(0.2)
@@ -223,12 +308,12 @@ class Rocket(pygame.sprite.Sprite):
         self.expl_sound.set_volume(0.5)
         self.target = target
         self.damage = damage
-        self.orig = self.image
         self.explosion_imgs = [load_image(f'{i // 2}.png', 'data/rocket_explosion_animation', -1) for i in range(22)]
         super().__init__(rockets, all_sprites)
         self.killed = False
         self.animation_sc = 0
-        self.image = pygame.transform.rotate(self.image, vector.angle)
+        self.orig = image
+        self.image = pygame.transform.rotate(image, vector.angle)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.size = self.image.get_size()
@@ -266,17 +351,20 @@ class Rocket(pygame.sprite.Sprite):
             self.explosion()
 
     def get_angle(self, angle):
-        self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
-        vx, vy = self.v.value * sin(
+        try:
+            self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
+            vx, vy = self.v.value * sin(
             math.radians(angle)), self.v.value * cos(math.radians(angle))
-        mod_a = (vx ** 2 + vy ** 2) ** 0.5
-        mod_b = (self.tv[0] ** 2 + self.tv[1] ** 2) ** 0.5
-        pr = vx * self.tv[0] + vy * self.tv[1]
-        res = pr / (mod_a * mod_b)
-        if res < 0:
-            return -math.degrees(math.acos(res))
-        else:
-            return math.degrees(math.acos(res))
+            mod_a = (vx ** 2 + vy ** 2) ** 0.5
+            mod_b = (self.tv[0] ** 2 + self.tv[1] ** 2) ** 0.5
+            pr = vx * self.tv[0] + vy * self.tv[1]
+            res = pr / (mod_a * mod_b)
+            if res < 0:
+                return -math.degrees(math.acos(res))
+            else:
+                return math.degrees(math.acos(res))
+        except Exception:
+            return 0
 
     def explosion(self):
         self.image = self.explosion_imgs[self.animation_sc]
@@ -742,9 +830,8 @@ target = Target()
 all_sprites.draw(screen)
 r = Radar(range=1000)
 enemy1 = Enemy(0, center)
-# enemy2 = Enemy(180)
+enemy2 = Enemy(180, center)
 text = Text()
-
 # play("salam.mp3")
 clock = pygame.time.Clock()
 firing = False
@@ -774,7 +861,7 @@ while running:
     bullets.update()
     radar.draw(screen)
     radar.update()
-    text.draw(clock.get_fps())
+    text.draw(f'FPS: {round(clock.get_fps())}')
     pygame.display.flip()
 
     clock.tick(30)
