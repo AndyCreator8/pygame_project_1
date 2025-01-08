@@ -6,12 +6,26 @@ import pygame
 pygame.init()
 fps = 60
 fpsClock = pygame.time.Clock()
-width, height = 640, 480
-screen = pygame.display.set_mode((width, height))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+size = width, height = screen.get_size()
 
 font = pygame.font.SysFont('Arial', 40)
 
 menu = []
+
+
+def posf(targetpos, size):
+    return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
+
+
+def load_menu():
+    titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
+    title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
+    title.update()
+
+    menucolor, menusize, menupos, menutext = (128, 0, 0), (200, 200), (width - 200, 200), "MENU"
+    menu = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext, onclickFunction=lambda: pygame.quit(), onePress=True)
+    menu.update()
 
 
 class Button():
@@ -49,8 +63,8 @@ class Button():
         if self.buttonRect.collidepoint(mousePos):
             self.buttonSurface.fill(self.fillColors['hover'])
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
-                self.buttonSurface = pygame.Surface((self.bwidth + self.dw, self.bheight + self.dh))
-                self.buttonRect = pygame.Rect(self.x - self.dw, self.y + self.dh, self.bwidth, self.bheight)
+                self.buttonSurface = pygame.Surface((self.bwidth + self.dw * 2, self.bheight + self.dh * 2))
+                self.buttonRect = pygame.Rect(self.x - self.dw, self.y - self.dh, self.bwidth + self.dw, self.bheight + self.dh)
                 self.buttonSurface.fill(self.fillColors['pressed'])
                 if self.onePress:
                     self.onclickFunction()
@@ -96,14 +110,16 @@ def myFunction():
     print('Button Pressed')
 
 
-Button(30, 30, 400, 100, (255, 255, 255), 'Button One (onePress)', myFunction)
-Label(30, 140, 400, 100, (255, 0, 0), 'Text')
+# Button(30, 30, 400, 100, (255, 255, 255), 'Button One (onePress)', myFunction)
+# Label(30, 140, 400, 100, (255, 0, 0), 'Text')
+load_menu()
 while True:
     screen.fill((20, 20, 20))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+    screen.fill((0, 0, 0))
     for object in menu:
         object.update()
     pygame.display.flip()
