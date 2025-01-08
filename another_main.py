@@ -10,7 +10,7 @@ map_size = 10000, 10000
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
-font = pygame.font.Font(None, 20)
+font = pygame.font.Font(None, 40)
 paused = True
 menu = []
 
@@ -91,7 +91,6 @@ class Label():
             self.labelRect.height / 2 - self.labelSurf.get_rect().height / 2
         ])
         screen.blit(self.labelSurface, self.labelRect)
-        print("updated")
 
 
 def load_game(level):
@@ -497,6 +496,9 @@ class Plane(pygame.sprite.Sprite):
         self.prev_t = -5
 
     def update(self, *args, **kwargs):
+        print(self.health)
+        if self.health <= 0:
+            pygame.quit()
         self.deltat = self.tick() / 1000
         self.t += self.deltat
         key = pygame.key.get_pressed()
