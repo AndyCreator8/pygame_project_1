@@ -50,8 +50,8 @@ class Button():
         if self.buttonRect.collidepoint(mousePos):
             self.buttonSurface.fill(self.fillColors['hover'])
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
-                self.buttonSurface = pygame.Surface((self.bwidth + self.dw, self.bheight + self.dh))
-                self.buttonRect = pygame.Rect(self.x - self.dw, self.y + self.dh, self.bwidth, self.bheight)
+                self.buttonSurface = pygame.Surface((self.bwidth + self.dw * 2, self.bheight + self.dh * 2))
+                self.buttonRect = pygame.Rect(self.x - self.dw, self.y - self.dh, self.bwidth + self.dw, self.bheight + self.dh)
                 self.buttonSurface.fill(self.fillColors['pressed'])
                 if self.onePress:
                     self.onclickFunction()
@@ -91,6 +91,7 @@ class Label():
             self.labelRect.height / 2 - self.labelSurf.get_rect().height / 2
         ])
         screen.blit(self.labelSurface, self.labelRect)
+        print("updated")
 
 
 def load_game(level):
@@ -98,7 +99,13 @@ def load_game(level):
 
 
 def load_menu():
-    title = Label()
+    titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
+    title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
+    title.update()
+
+    menucolor, menusize, menupos, menutext = (128, 0, 0), (200, 200), (width - 200, 200), "MENU"
+    menu = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext, onclickFunction=lambda: pygame.quit(), onePress=True)
+    menu.update()
 
 
 def posf(targetpos, size):
@@ -490,7 +497,6 @@ class Plane(pygame.sprite.Sprite):
         self.prev_t = -5
 
     def update(self, *args, **kwargs):
-        print(self.bulletlimit)
         self.deltat = self.tick() / 1000
         self.t += self.deltat
         key = pygame.key.get_pressed()
@@ -706,18 +712,23 @@ class Enemy(BasedMapObject):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def get_angle(self, angle):
-        self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
-        range = (abs(self.tv[0]) ** 2 + abs(self.tv[1]) ** 2) ** 0.5
-        vx, vy = self.v.value * sin(
-            math.radians(angle + 90)), self.v.value * cos(math.radians(angle + 90))
-        mod_a = (vx ** 2 + vy ** 2) ** 0.5
-        mod_b = (self.tv[0] ** 2 + self.tv[1] ** 2) ** 0.5
-        pr = vx * self.tv[0] + vy * self.tv[1]
-        res = pr / (mod_a * mod_b)
-        if res < 0:
-            return -math.degrees(math.acos(res)), range
-        else:
-            return math.degrees(math.acos(res)), range
+        ans = math.degrees(0)
+        try:
+            self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
+            range = (abs(self.tv[0]) ** 2 + abs(self.tv[1]) ** 2) ** 0.5
+            vx, vy = self.v.value * sin(
+                math.radians(angle + 90)), self.v.value * cos(math.radians(angle + 90))
+            mod_a = (vx ** 2 + vy ** 2) ** 0.5
+            mod_b = (self.tv[0] ** 2 + self.tv[1] ** 2) ** 0.5
+            pr = vx * self.tv[0] + vy * self.tv[1]
+            res = pr / (mod_a * mod_b)
+            if res < 0:
+                ans = (-math.degrees(math.acos(res)), range)
+            else:
+                ans = (math.degrees(math.acos(res)), range)
+        except Exception:
+            ans = (math.degrees(0), 0)
+        return ans
 
     def shoot(self):
         angle_rad = math.radians(-self.v.angle - 90)
@@ -832,7 +843,8 @@ r = Radar(range=1000)
 enemy1 = Enemy(0, center)
 enemy2 = Enemy(180, center)
 text = Text()
-# play("salam.mp3")
+load_menu()
+play("salam.mp3")
 clock = pygame.time.Clock()
 firing = False
 running = True
@@ -848,9 +860,7 @@ while running:
             firing = False
     if firing:
         plane.fire()
-
     screen.fill((0, 0, 0))
-
     all_sprites.update()
     all_sprites.draw(screen)
     rockets.draw(screen)
@@ -862,7 +872,8 @@ while running:
     radar.draw(screen)
     radar.update()
     text.draw(f'FPS: {round(clock.get_fps())}')
+    for object in menu:
+        object.update()
     pygame.display.flip()
-
     clock.tick(30)
 pygame.quit()
