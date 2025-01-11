@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import random
@@ -18,7 +19,13 @@ font = pygame.font.Font(None, 40)
 paused = True
 menu = []
 
-
+with open('data/planes.json', 'r', encoding='utf8') as file:
+    planes = json.load(file)
+print(f'Выберите самолет:')
+for j, i in enumerate(planes):
+    print(j + 1, i)
+chosen_plane = planes[list(planes.keys())[int(input()) - 1]]
+print(chosen_plane)
 class Button():
     def __init__(self, x, y, width, height, color, buttonText='Button', onclickFunction=None, onePress=False):
         self.x = x
@@ -427,8 +434,8 @@ class Bullet(BasedMapObject):
             self.v.angle += random.choice(range(-self.spread, self.spread))
             self.v.vx, self.v.vy = self.v.value * sin(
                 math.radians(self.v.angle)), self.v.value * cos(math.radians(self.v.angle))
-            if pygame.sprite.spritecollideany(self, planes):
-                t = pygame.sprite.spritecollideany(self, planes)
+            if pygame.sprite.spritecollideany(self, planes_sprites):
+                t = pygame.sprite.spritecollideany(self, planes_sprites)
                 if pygame.sprite.collide_mask(self, t):
                     self.killed = True
                     t.health -= self.damage
@@ -446,34 +453,35 @@ class Bullet(BasedMapObject):
             self.kill()
 
 
+
 class Plane(pygame.sprite.Sprite):
-    def __init__(self, health=100):
-        super().__init__(player, planes, all_sprites)
+    def __init__(self, name, health, max_speed, mobility, max_bullets, rockets, max_rockets,
+                 max_bombs, bullet_speed, bullet_damage, rocket_damage):
+        super().__init__(player, planes_sprites, all_sprites)
         self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.wav")
         self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
         self.sound.play(loops=-1)
-        self.image = load_image('0.png','data/plane_1', -1)
+        self.image = load_image('0.png', f'data/{name}', -1)
         orig_w = self.image.get_width() // 2
         orig_h = self.image.get_height() // 2
         self.mask = pygame.mask.from_surface(self.image)
         self.animations = []
         self.animations_shoot = []
         for i in range(-3, 4):
-            self.animations.append(scale(load_image(f'{i}.png', 'data/plane_1', -1), orig_w, orig_h))
+            img = load_image(f'{i}.png', f'data/{name}', -1)
+            self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
             if i != 0:
-                self.animations.append(scale(load_image(f'{i}.png', 'data/plane_1', -1), orig_w, orig_h))
-        for i in range(-3, 4):
-            self.animations_shoot.append((scale(load_image(f'{i}.png', 'data/plane_1_shooting', -1), orig_w, orig_h), scale(load_image(f'{i} — копия.png', 'data/plane_1_shooting', -1), orig_w, orig_h)))
-        self.bulletlimit = 2000
-        self.rocketlimit = 10
-        self.bulletspeed = 50
-        self.blltdmg = 0.5
-        self.rctdmg = 15
+                self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+        self.bulletlimit = max_bullets
+        self.rocketlimit = max_rockets
+        self.bulletspeed = bullet_speed
+        self.blltdmg = bullet_damage
+        self.rctdmg = rocket_damage
         self.health = health
         self.bombing = False
-        self.bomblimit = 10
+        self.bomblimit = max_bombs
         self.autobombing = False
         self.spamenabled = False
         self.bombenabled = True
@@ -492,7 +500,8 @@ class Plane(pygame.sprite.Sprite):
         self.rect.centery = center[1]
 
         self.shiftcoef = 1.25
-        self.maxspeed = 10
+        self.maxspeed = max_speed
+        self.mobility = mobility
         self.throttle = 1
         self.speed = self.maxspeed * self.throttle
         self.vector = Vector(self.speed, 90)
@@ -518,19 +527,18 @@ class Plane(pygame.sprite.Sprite):
                 self.throttle -= self.deltat / 10
 
         if key[pygame.K_a]:
-            self.vector.angle += 4 - self.animation_sc // 2
+            self.vector.angle += self.mobility
             self.animation_sc -= 1 if self.animation_sc > 0 else 0
             self.image = self.animations[self.animation_sc]
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
 
         elif key[pygame.K_d]:
-            self.vector.angle -= self.animation_sc // 4
+            self.vector.angle -= self.mobility
             self.animation_sc += 1 if self.animation_sc < 12 else 0
             self.image = self.animations[self.animation_sc]
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.vector.angle - 90)
 
         else:
-
             if self.animation_sc < 6:
                 self.animation_sc += 1
             elif self.animation_sc > 6:
@@ -582,8 +590,6 @@ class Plane(pygame.sprite.Sprite):
             new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
             new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
             Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
-            self.image = random.choice(self.animations_shoot[self.animation_sc // 2])
-            self.image = pygame.transform.rotate(self.image, self.vector.angle - 90)
             self.bulletlimit -= 2
             self.prev_bullet_t = self.t
         else:
@@ -625,18 +631,22 @@ class TargetCross(pygame.sprite.Sprite):
 
 
 class Enemy(BasedMapObject):
-    image = load_image('0.png', 'data/plane_2', -1)
+    image = load_image('0.png', 'data/Me 163', -1)
 
-    def __init__(self, angle, pos):
-        super().__init__(Enemy.image, Vector(10, angle), (500, 500))
-        self.add(enemies, planes)
+    def __init__(self, angle, pos, name, health, max_speed, mobility, max_bullets, rockets, max_rockets,
+                 max_bombs, bullet_speed, bullet_damage, rocket_damage):
+        super().__init__(Enemy.image, Vector(max_speed, angle), (500, 500))
+        self.add(enemies, planes_sprites)
         self.rect = self.image.get_rect()
         self.rect.centerx, self.rect.centery = pos
         self.animations = []
         for i in range(-3, 4):
-            self.animations.append(load_image(f'{i}.png', 'data/plane_2', -1))
+            img = load_image(f'{i}.png', f'data/{name}', -1)
+            self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
             if i != 0:
-                self.animations.append(load_image(f'{i}.png', 'data/plane_2', -1))
+                self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+
+
         self.explosion_imgs = []
         for i in range(0, 5):
             self.explosion_imgs.append(scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.size[0], self.size[1]))
@@ -646,16 +656,21 @@ class Enemy(BasedMapObject):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.caught = False
-        self.health = 20
         self.target = plane
-        self.bulletspeed = 20
-        self.bltdmg = 0.1
         self.explosion_sc = 0
         self.animation_sc = 6
         self.fire_rate = -1
         self.prev_bullet_t = 0
         self.prev_rocket_t = 0
         self.range = r.range
+        self.bulletlimit = max_bullets
+        self.rocketlimit = max_rockets
+        self.bulletspeed = bullet_speed
+        self.bltdmg = bullet_damage
+        self.rctdmg = rocket_damage
+        self.health = health
+        self.maxspeed = max_speed
+        self.mobility = mobility
 
     def update(self):
         try:
@@ -689,11 +704,11 @@ class Enemy(BasedMapObject):
             if angle > 0:
                 # print(self.get_angle(self.v.angle)[1])
                 if round(more_angle) <= round(less_angle):
-                    self.v = Vector(self.v.value, self.v.angle - 2)
+                    self.v = Vector(self.v.value, self.v.angle - self.mobility)
                     self.animation_sc += 1 if self.animation_sc < 12 else 0
                     self.image = self.animations[self.animation_sc]
                 elif round(more_angle) >= round(less_angle):
-                    self.v = Vector(self.v.value, self.v.angle + 2)
+                    self.v = Vector(self.v.value, self.v.angle + self.mobility)
                     self.animation_sc -= 1 if self.animation_sc > 0 else 0
                     self.image = self.animations[self.animation_sc]
                 else:
@@ -701,11 +716,11 @@ class Enemy(BasedMapObject):
             elif angle < 0:
                 # print(self.get_angle(self.v.angle)[1])
                 if round(more_angle) <= round(less_angle):
-                    self.v = Vector(self.v.value, self.v.angle + 2)
+                    self.v = Vector(self.v.value, self.v.angle + self.mobility)
                     self.animation_sc -= 1 if self.animation_sc > 0 else 0
                     self.image = self.animations[self.animation_sc]
                 elif round(more_angle) >= round(less_angle):
-                    self.v = Vector(self.v.value, self.v.angle - 2)
+                    self.v = Vector(self.v.value, self.v.angle - self.mobility)
                     self.animation_sc += 1 if self.animation_sc < 12 else 0
                     self.image = self.animations[self.animation_sc]
 
@@ -845,17 +860,18 @@ player = pygame.sprite.Group()
 blocks = pygame.sprite.Group()
 rockets = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
-planes = pygame.sprite.Group()
+planes_sprites = pygame.sprite.Group()
 radar = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
-plane = Plane()
+plane = Plane(*chosen_plane.values())
 map = Map()
 tcr = TargetCross()
 target = Target()
 all_sprites.draw(screen)
 r = Radar(range=1000)
-enemy1 = Enemy(0, center)
-enemy2 = Enemy(180, center)
+enemy1 = Enemy(0, center, *planes[random.choice(list(planes.keys()))].values())
+enemy2 = Enemy(90, center, *planes[random.choice(list(planes.keys()))].values())
+
 text = Text()
 load_menu()
 play("salam.mp3")
