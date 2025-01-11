@@ -295,21 +295,23 @@ class Bomb(BasedMapObject):
         self.rect.x, self.rect.y = posf(self.pos, self.size)
         self.bombsize = 100
         self.size = (100, 100)
-        self.flytime = 4.75
+        self.flytime = 3
         self.expltime = 2
 
     def update(self, *args):
         super().update()
+        # print(self.t)
+        # print(self.flytime + self.expltime)
         if self.t < self.flytime:
             self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 100)))
             self.size = (self.bombsize, self.bombsize)
-            self.image = scale(self.bomb, *self.size)
-            self.bomb = self.image
-        elif self.t >= self.flytime and self.image == self.bomb:
+            self.image = scale(Bomb.bomb, *self.size)
+            self.image = rotate(self.image, self.v.angle - 90)
+        elif self.t >= self.flytime and self.size[0] < 50:
             self.v = Vector()
             self.image = Bomb.boom
             self.size = (100, 100)
-        elif self.t >= self.flytime + self.expltime and self.image == Bomb.boom:
+        elif self.t >= self.flytime + self.expltime:
             self.image = Bomb.crater
             self.size = (50, 50)
             self.snd.stop()
@@ -517,7 +519,7 @@ class Plane(pygame.sprite.Sprite):
             pygame.quit()
         self.deltat = self.tick() / 1000
         self.t += self.deltat
-        print(self.t)
+
         key = pygame.key.get_pressed()
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
@@ -870,7 +872,7 @@ target = Target()
 all_sprites.draw(screen)
 r = Radar(range=1000)
 enemy1 = Enemy(0, center, *planes[random.choice(list(planes.keys()))].values())
-enemy2 = Enemy(90, center, *planes[random.choice(list(planes.keys()))].values())
+enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
 
 text = Text()
 load_menu()
