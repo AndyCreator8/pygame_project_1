@@ -815,7 +815,7 @@ class Enemy(BasedMapObject):
 
 
 class Target(BasedMapObject):
-    image = scale(load_image('Targets/plank.jpeg'), 100, 100)
+    image = scale(load_image('plank.jpeg'), 100, 100)
 
     def __init__(self, health=400):
         super().__init__(Target.image, Vector(), (500, 500))
