@@ -24,7 +24,8 @@ with open('data/planes.json', 'r', encoding='utf8') as file:
 print(f'Выберите самолет:')
 for j, i in enumerate(planes):
     print(j + 1, i)
-chosen_plane = planes[list(planes.keys())[int(input()) - 1]]
+# chosen_plane = planes[list(planes.keys())[int(input()) - 1]]
+chosen_plane = planes[list(planes.keys())[3 - 1]]
 print(chosen_plane)
 
 
@@ -106,7 +107,7 @@ class Label():
         screen.blit(self.labelSurface, self.labelRect)
 
 
-def load_game(level):
+def playgame(era, level):
     pass
 
 
@@ -306,6 +307,7 @@ class Bomb(BasedMapObject):
         self.size = (self.bombsize, self.bombsize)
         self.flytime = 3
         self.expltime = 2
+        self.status = "bomb"
 
     def update(self, *args):
         super().update()
@@ -316,14 +318,20 @@ class Bomb(BasedMapObject):
             self.size = (self.bombsize, self.bombsize)
             self.image = scale(self.bomb, *self.size)
             self.image = rotate(self.image, self.v.angle - 90)
-        elif self.t >= self.flytime and self.size[0] < 50:
+        elif self.t >= self.flytime and self.status == "bomb":
+            self.status = "boom"
             self.v = Vector()
             self.image = self.boom
             self.size = (self.boomsize, self.boomsize)
-        elif self.t >= self.flytime + self.expltime:
+        elif self.t >= self.flytime + self.expltime and self.status == "boom":
+            self.status = "crater"
             self.image = self.crater
             self.size = (self.cratersize, self.cratersize)
             self.snd.stop()
+        if pygame.sprite.spritecollideany(self, targets) and self.status == "boom":
+            t = pygame.sprite.spritecollideany(self, targets)
+            if pygame.sprite.collide_mask(self, t):
+                t.health -= self.dmg
 
 
 class Rocket(pygame.sprite.Sprite):
@@ -807,11 +815,17 @@ class Enemy(BasedMapObject):
 
 
 class Target(BasedMapObject):
-    image = scale(load_image('plank.jpeg'), 200, 200)
+    image = scale(load_image('Targets/plank.jpeg'), 100, 100)
 
-    def __init__(self):
-        # self.add(blocks)
+    def __init__(self, health=400):
         super().__init__(Target.image, Vector(), (500, 500))
+        self.health = health
+
+    def update(self):
+        super().update()
+        if self.health <= 0:
+            self.kill()
+
 
 
 class Radar(pygame.sprite.Sprite):
@@ -868,7 +882,7 @@ all_sprites = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 vertical_borders = pygame.sprite.Group()
 player = pygame.sprite.Group()
-blocks = pygame.sprite.Group()
+targets = pygame.sprite.Group()
 rockets = pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 planes_sprites = pygame.sprite.Group()
@@ -878,6 +892,7 @@ plane = Plane(**chosen_plane)
 map = Map()
 tcr = TargetCross()
 target = Target()
+targets.add(target)
 all_sprites.draw(screen)
 r = Radar(range=1000)
 enemy1 = Enemy(0, center, *planes[random.choice(list(planes.keys()))].values())
