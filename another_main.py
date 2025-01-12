@@ -415,7 +415,6 @@ class Rocket(BasedMapObject):
             self.kill()
 
 
-
 class Bullet(BasedMapObject):
     image = pygame.Surface((1, 5))
 
@@ -677,6 +676,7 @@ class Enemy(BasedMapObject):
         self.rect = self.image.get_rect(center=self.rect.center)
         self.caught = False
         self.target = plane
+        self.rockets = rockets
         self.explosion_sc = 0
         self.animation_sc = 6
         self.fire_rate = -1
@@ -718,7 +718,6 @@ class Enemy(BasedMapObject):
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.rect = self.image.get_rect(center=self.rect.center)
 
-
     def circle_attack(self, angle):
         more_angle = self.get_angle(self.v.angle + 1)[0]
         less_angle = self.get_angle(self.v.angle - 1)[0]
@@ -740,7 +739,6 @@ class Enemy(BasedMapObject):
         self.animation_sc += 1 if self.animation_sc < 12 else 0
         self.image = self.animations[self.animation_sc]
 
-
     def turn_left(self, seconds=1):
         self.v = Vector(self.v.value, self.v.angle + self.mobility)
         self.animation_sc -= 1 if self.animation_sc > 0 else 0
@@ -751,7 +749,6 @@ class Enemy(BasedMapObject):
             self.turn_left()
         else:
             self.turn_right()
-
 
     def attack(self):
         # self.v = Vector(self.v.value, plane.vector.angle)
@@ -766,12 +763,10 @@ class Enemy(BasedMapObject):
             if range < 700 and -170 > angle > -190:
                 self.shoot()
             if range > 200:
-                if self.t - self.prev_rocket_t >= 2:
+                if self.rockets and self.t - self.prev_rocket_t >= 2 and self.rocketlimit:
                     Rocket(Vector(20, self.v.angle), self.rect.center, plane)
+                    self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
-
-
-
 
     def get_angle(self, angle):
         ans = math.degrees(0)
@@ -831,17 +826,7 @@ class Enemy(BasedMapObject):
 
 
 class Target(BasedMapObject):
-    image = scale(load_image('plank.jpeg'), 100, 100)
-
-    def __init__(self, health=400):
-        super().__init__(Target.image, Vector(), (500, 500))
-        self.health = health
-
-    def update(self):
-        super().update()
-        if self.health <= 0:
-            self.kill()
-
+    image = scale(load_image('Targets/plank.jpeg'), 100, 100)
 
 
 class Radar(pygame.sprite.Sprite):
