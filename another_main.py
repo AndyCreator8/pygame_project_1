@@ -92,6 +92,10 @@ def load_erachoice():
     era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
                   onclickFunction=load_ingameui, onePress=True, fontsize=75, bold=True)
 
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
+
 
 def load_era1lvls():
     wait(0.125)
@@ -117,6 +121,10 @@ def load_era1lvls():
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
                   onclickFunction=load_game, onclickParams={"era":1, "level":5}, onePress=True, fontsize=75, bold=True)
 
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+
 
 def load_era2lvls():
     wait(0.125)
@@ -141,6 +149,10 @@ def load_era2lvls():
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
                   onclickFunction=load_game, onclickParams={"era":2, "level":5}, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
 
 
 def posf(targetpos, size):
@@ -1116,7 +1128,7 @@ while running:
             else:
                 print("pause")
                 pause_game()
-            paused = not paused
+            # paused = not paused
             # Maybe
             boolparams = True
         elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
