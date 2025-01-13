@@ -86,7 +86,7 @@ def load_erachoice():
 
     era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "ERA II"
     era2 = Button(*posf(era2pos, era2size), *era2size, color=era2color, buttonText=era2text,
-                  onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_era2lvls, onePress=True, fontsize=75, bold=True)
 
     era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "ERA III"
     era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
@@ -118,13 +118,48 @@ def load_era1lvls():
                   onclickFunction=load_game, onclickParams={"era":1, "level":5}, onePress=True, fontsize=75, bold=True)
 
 
+def load_era2lvls():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":1}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":2}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":3}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL VI"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":4}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":5}, onePress=True, fontsize=75, bold=True)
+
+
 def posf(targetpos, size):
     return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
 
 
 def load_menu():
     wait(0.125)
-    global menu, in_game
+    global menu, in_game, all_sprites, horizontal_borders, vertical_borders, player, targets, planes_sprites, radar, enemies
+
+    all_sprites = pygame.sprite.Group()
+    horizontal_borders = pygame.sprite.Group()
+    vertical_borders = pygame.sprite.Group()
+    player = pygame.sprite.Group()
+    targets = pygame.sprite.Group()
+    planes_sprites = pygame.sprite.Group()
+    radar = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+
     in_game = False
     menu = []
     playcolor, playsize, playpos, playtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "PLAY"
@@ -136,8 +171,9 @@ def load_menu():
 
 
 def pause_game():
-    wait(0.06125)
-    global menu
+    # wait(0.125)
+    global menu, paused
+    paused = True
     print(1)
     # paused = False
     menu = []
@@ -155,7 +191,8 @@ def pause_game():
 
 
 def load_ingameui():
-    global menu, boolparams, in_game, params, plane
+    global menu, boolparams, in_game, params, plane, paused
+    paused = False
     params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
     in_game = True
     menu = []
@@ -1077,6 +1114,7 @@ while running:
             if paused:
                 load_ingameui()
             else:
+                print("pause")
                 pause_game()
             paused = not paused
             # Maybe
@@ -1085,13 +1123,13 @@ while running:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
-    if in_game:
+    if in_game and not paused:
         load_ingameui()
     screen.fill((0, 0, 0))
+    all_sprites.draw(screen)
     if not paused:
         all_sprites.update()
         player.update()
-    all_sprites.draw(screen)
     player.draw(screen)
 
     fpslabel.draw(f'FPS: {round(clock.get_fps())}')
