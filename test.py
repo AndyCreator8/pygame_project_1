@@ -196,6 +196,19 @@ class Button():
 
         self.buttonSurf = self.font.render(buttonText, True, (20, 20, 20))
         menu.append(self)
+        self.pos = (x, y)
+        self.fontcolor = color
+        self.font = pygame.font.SysFont(fontname, fontsize, bold=bold)
+        self.surf = self.font.render(buttonText, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        # print(self.rect.x, self.rect.y)
+
+    def change_text(self, text):
+        self.surf = self.font.render(text, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        print(self.rect.x, self.rect.y)
 
     def update(self):
         self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
