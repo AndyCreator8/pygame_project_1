@@ -15,7 +15,10 @@ screen = pygame.display.set_mode((1200, 700))
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
+in_game = False
 paused = True
+boolparams = True
+params = {}
 menu = []
 
 with open('data/planes.json', 'r', encoding='utf8') as file:
@@ -24,22 +27,172 @@ print(f'Выберите самолет:')
 for j, i in enumerate(planes):
     print(j + 1, i)
 # chosen_plane = planes[list(planes.keys())[int(input()) - 1]]
-chosen_plane = planes[list(planes.keys())[1]]
-print(chosen_plane)
+
+
+class Clock:
+    def __init__(self, fps):
+        self.clock = pygame.time.Clock()
+        self.fps = fps
+        self.t = 0
+
+    def update(self):
+        dt = self.clock.tick(self.fps) / 1000
+        self.t += dt
+
+    def get_clock(self):
+        return Clock(self.fps)
+
+    def time(self):
+        return self.t
+
+
+def wait(time):
+    cl = pygame.time.wait(int(time * 1000))
+
+
+def load_game(era, level):
+    global planes, map, tcr, target, r, plane, in_game, paused
+    in_game = True
+    paused = False
+    if era == 1:
+        i = 4
+    elif era == 2:
+        i = 0
+    else:
+        i = 3
+    chosen_plane = planes[list(planes.keys())[i]]
+    print(chosen_plane)
+    enemytypes = [[], [4, 2, 7], [0, 5, 7, 8], [1, 3]]
+    plane = Plane(**chosen_plane)
+    map = Map()
+    tcr = TargetCross()
+    target = Target()
+    r = Radar(range=1000)
+    enemiesc = level
+    for i in range(enemiesc):
+        Enemy(0, (1000, 1000), *planes[list(planes.keys())[random.choice(enemytypes[era])]].values())
+    #enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
+    # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
+    #enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
+
+
+def load_erachoice():
+    wait(0.125)
+    global menu
+    menu = []
+    era1color, era1size, era1pos, era1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "ERA I"
+    era1 = Button(*posf(era1pos, era1size), *era1size, color=era1color, buttonText=era1text,
+                  onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
+
+    era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "ERA II"
+    era2 = Button(*posf(era2pos, era2size), *era2size, color=era2color, buttonText=era2text,
+                  onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
+
+    era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "ERA III"
+    era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
+                  onclickFunction=load_ingameui, onePress=True, fontsize=75, bold=True)
+
+
+def load_era1lvls():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":1}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":2}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":3}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL VI"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":4}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":5}, onePress=True, fontsize=75, bold=True)
+
+
+def posf(targetpos, size):
+    return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
+
+
+def load_menu():
+    wait(0.125)
+    global menu, in_game
+    in_game = False
+    menu = []
+    playcolor, playsize, playpos, playtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "PLAY"
+    play = Button(*posf(playpos, playsize), *playsize, color=playcolor, buttonText=playtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+    exitcolor, exitsize, exitpos, exittext = (128, 0, 0), (500, 200), (width // 2, height // 2 + 110), "EXIT"
+    exit = Button(*posf(exitpos, exitsize), *exitsize, color=exitcolor, buttonText=exittext,
+                  onclickFunction=pygame.quit, onePress=True, fontsize=75, bold=True)
+
+
+def pause_game():
+    wait(0.06125)
+    global menu
+    print(1)
+    # paused = False
+    menu = []
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE?"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_ingameui,
+                  onePress=True, fontsize=75, bold=True)
+    exittomenucolor, exittomenusize, exittomenupos, exittomenutext = (128, 0, 0), (500, 200), (
+    width // 2, height // 2 + 110), "MAIN MENU"
+    exittomenu = Button(*posf(exittomenupos, exittomenusize), *exittomenusize, color=exittomenucolor,
+                        buttonText=exittomenutext,
+                        onclickFunction=load_menu,
+                        onePress=True, fontsize=75, bold=True)
+    # exittomenu.update()
+
+
+def load_ingameui():
+    global menu, boolparams, in_game, params, plane
+    params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
+    in_game = True
+    menu = []
+    # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
+    # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
+    # title.update()
+
+    menucolor, menusize, menupos, menutext = (128, 0, 0), (100, 100), (width - 75, 75), "II"
+    menubtn = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext,
+                     onclickFunction=pause_game, onePress=True, fontsize=75, bold=True)
+    # menubtn.update()
+    if boolparams:
+        x, y = width - 200, 0
+        prcolor, prfontsize, prh = (255, 255, 255), 40, 100
+        for i in params:
+            y += prh
+            # print(y)
+            Text((x, y), f"{i}: {params[i]}", fontsize=prfontsize, fontcolor=prcolor)
 
 
 class Button():
-    def __init__(self, x, y, width, height, color, buttonText='Button', onclickFunction=None, onePress=False):
+    def __init__(self, x, y, width, height, color, buttonText='Button', onclickFunction=None, onePress=False,
+                 onclickParams=0, fontsize=30, bold=False, fontname="Arial"):
+        self.bold = bold
+        self.font = pygame.font.SysFont(fontname, fontsize, bold=self.bold)
         self.x = x
         self.y = y
         self.dw = 5
         self.dh = 5
         self.bcolor = color
         self.d = 30
-        self.k1, self.k2 = (max(self.bcolor) - self.d) / max(self.bcolor), (max(self.bcolor) - self.d * 2) / max(self.bcolor)
-        print(self.k1, self.k2)
+        self.k1, self.k2 = (max(self.bcolor) - self.d) / max(self.bcolor), (max(self.bcolor) - self.d * 2) / max(
+            self.bcolor)
+        # print(self.k1, self.k2)
         self.bwidth = width
         self.bheight = height
+        self.onclickParams = onclickParams
         self.onclickFunction = onclickFunction
         self.onePress = onePress
         self.alreadyPressed = False
@@ -52,8 +205,21 @@ class Button():
         self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
         self.buttonRect = pygame.Rect(self.x, self.y, self.bwidth, self.bheight)
 
-        self.buttonSurf = font.render(buttonText, True, (20, 20, 20))
+        self.buttonSurf = self.font.render(buttonText, True, (20, 20, 20))
         menu.append(self)
+        self.pos = (x, y)
+        self.fontcolor = color
+        self.font = pygame.font.SysFont(fontname, fontsize, bold=bold)
+        self.surf = self.font.render(buttonText, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        # print(self.rect.x, self.rect.y)
+
+    def change_text(self, text):
+        self.surf = self.font.render(text, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        print(self.rect.x, self.rect.y)
 
     def update(self):
         self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
@@ -64,12 +230,19 @@ class Button():
             self.buttonSurface.fill(self.fillColors['hover'])
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
                 self.buttonSurface = pygame.Surface((self.bwidth + self.dw * 2, self.bheight + self.dh * 2))
-                self.buttonRect = pygame.Rect(self.x - self.dw, self.y - self.dh, self.bwidth + self.dw, self.bheight + self.dh)
+                self.buttonRect = pygame.Rect(self.x - self.dw, self.y - self.dh, self.bwidth + self.dw,
+                                              self.bheight + self.dh)
                 self.buttonSurface.fill(self.fillColors['pressed'])
                 if self.onePress:
-                    self.onclickFunction()
+                    if self.onclickParams:
+                        self.onclickFunction(**self.onclickParams)
+                    else:
+                        self.onclickFunction()
                 elif not self.alreadyPressed:
-                    self.onclickFunction()
+                    if self.onclickParams:
+                        self.onclickFunction(**self.onclickParams)
+                    else:
+                        self.onclickFunction()
                     self.alreadyPressed = True
             else:
                 self.alreadyPressed = False
@@ -80,51 +253,32 @@ class Button():
         screen.blit(self.buttonSurface, self.buttonRect)
 
     def updatetext(self, newtext):
-        self.buttonSurf = font.render(newtext, True, (20, 20, 20))
+        self.buttonSurf = self.font.render(newtext, True, (20, 20, 20))
 
 
-class Label():
-    def __init__(self, x, y, width, height, color, labelText='Text'):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-        self.color = color
-        self.labelSurface = pygame.Surface((self.width, self.height))
-        self.labelRect = pygame.Rect(self.x, self.y, self.width, self.height)
-
-        self.labelSurf = font.render(labelText, True, (20, 20, 20))
+class Text:
+    def __init__(self, pos, text, fontsize, bold=False, fontname="Arial", fontcolor=(0, 0, 0)):
         menu.append(self)
+        self.pos = pos
+        self.fontcolor = fontcolor
+        self.font = pygame.font.SysFont(fontname, fontsize, bold=bold)
+        self.surf = self.font.render(text, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        # print(self.rect.x, self.rect.y)
+
+    def change_text(self, text):
+        self.surf = self.font.render(text, True, self.fontcolor)
+        self.rect = self.surf.get_rect()
+        self.rect.x, self.rect.y = posf(self.pos, self.surf.get_size())
+        print(self.rect.x, self.rect.y)
 
     def update(self):
-        self.labelSurface.fill(self.color)
-        self.labelSurface.blit(self.labelSurf, [
-            self.labelRect.width / 2 - self.labelSurf.get_rect().width / 2,
-            self.labelRect.height / 2 - self.labelSurf.get_rect().height / 2
-        ])
-        screen.blit(self.labelSurface, self.labelRect)
+        screen.blit(self.surf, self.rect)
 
 
-def playgame(era, level):
-    start_game()
-
-
-def load_menu():
-    titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
-    title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
-    title.update()
-
-    menucolor, menusize, menupos, menutext = (128, 0, 0), (200, 200), (width - 200, 200), "MENU"
-    menu = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext, onclickFunction=lambda: pygame.quit(), onePress=True)
-    start = Button(*posf((500, 500), menusize), *menusize, color=menucolor, buttonText="START",
-                  onclickFunction=lambda: start_game(), onePress=True)
-    menu.update()
-    start.update()
-
-
-def posf(targetpos, size):
-    return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
+def posf(targetpos, size1):
+    return (targetpos[0] - size1[0] // 2, targetpos[1] - size1[1] // 2)
 
 
 def scale(image, sizex, sizey):
@@ -184,7 +338,7 @@ def pause():
         paused = True
 
 
-class Text:
+class FPS:
     def __init__(self):
         pass
 
@@ -341,7 +495,7 @@ class Rocket(BasedMapObject):
         # self.add(rockets)
         self.sound = pygame.mixer.Sound('sounds/rct_launch.wav')
         self.sound.set_volume(0.2)
-        # self.sound.play()
+        self.sound.play()
         self.expl_sound = pygame.mixer.Sound('sounds/bomb_explotano.wav')
         self.expl_sound.set_volume(0.5)
         self.target = target
@@ -385,7 +539,7 @@ class Rocket(BasedMapObject):
                 self.killed = True
                 self.target.health -= self.damage
         else:
-            # self.expl_sound.play()
+            self.expl_sound.play()
             self.explosion()
 
 
@@ -469,6 +623,7 @@ class Bullet(BasedMapObject):
     def explosion(self):
         self.image = self.explosion_imgs[self.animation_sc]
         self.rect = self.image.get_rect(center=self.rect.center)
+
         self.animation_sc += 1
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
@@ -482,10 +637,10 @@ class Plane(pygame.sprite.Sprite):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
         self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.wav")
-        self.mgsnd.set_volume(0.1)
+        self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
-        # self.sound.play(loops=-1)
+        self.sound.play(loops=-1)
         self.image = load_image('0.png', f'data/{name}', -1)
 
         self.mask = pygame.mask.from_surface(self.image)
@@ -531,7 +686,6 @@ class Plane(pygame.sprite.Sprite):
         self.vector = Vector(self.speed, 90)
 
         self.orig = self.image
-        self.firing = False
         self.animation_sc = 6
         self.prev_rocket_t = 0
         self.prev_bullet_t = 0
@@ -544,9 +698,13 @@ class Plane(pygame.sprite.Sprite):
         self.t += self.deltat
 
         key = pygame.key.get_pressed()
-
-        if self.firing:
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0]:
+            # self.mgsnd.play()
             self.fire()
+        else:
+            pass
+            # self.mgsnd.stop()
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
@@ -622,7 +780,6 @@ class Plane(pygame.sprite.Sprite):
             Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
             self.bulletlimit -= 2
             self.prev_bullet_t = self.t
-        print('a')
 
     def closest(self):
         ses = [abs(x.get_vector_from_plane().value) for x in enemies.sprites()]
@@ -664,7 +821,7 @@ class Enemy(BasedMapObject):
 
     def __init__(self, angle, pos, name, health, max_speed, mobility, max_bullets, rockets, max_rockets,
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage=0):
-        super().__init__(Enemy.image, Vector(max_speed, angle), (500, 500))
+        super().__init__(Enemy.image, Vector(max_speed, angle), pos)
         self.add(enemies, planes_sprites)
         self.rect = self.image.get_rect()
         self.rect.centerx, self.rect.centery = pos
@@ -893,10 +1050,7 @@ class Radar(pygame.sprite.Sprite):
         self.caught = newarr
 
 
-
-
-
-pygame.display.set_caption('BOOM')
+pygame.display.set_caption('A STORM ON A HOT DAY')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
@@ -906,20 +1060,8 @@ targets = pygame.sprite.Group()
 planes_sprites = pygame.sprite.Group()
 radar = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
-plane = None
 
-def start_game():
-    global plane, map, tcr, target, r
-    plane = Plane(**chosen_plane)
-    map = Map()
-    tcr = TargetCross()
-    target = Target()
-    r = Radar(range=1000)
-    enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
-    # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
-    enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
-
-text = Text()
+fpslabel = FPS()
 load_menu()
 # play("salam.mp3")
 clock = pygame.time.Clock()
@@ -927,27 +1069,32 @@ firing = False
 running = True
 
 while running:
+    # print(in_game)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if plane:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
-                firing = True
-                plane.mgsnd.play()
-            elif event.type == pygame.MOUSEBUTTONUP:
-                plane.mgsnd.stop()
-                firing = False
-    if plane:
-        if firing:
-            plane.fire()
+        elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and in_game:
+            if paused:
+                load_ingameui()
+            else:
+                pause_game()
+            paused = not paused
+            # Maybe
+            boolparams = True
+        elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
+            print("tab changed")
+            boolparams = not boolparams
+            load_ingameui()
+    if in_game:
+        load_ingameui()
     screen.fill((0, 0, 0))
+    if not paused:
+        all_sprites.update()
+        player.update()
     all_sprites.draw(screen)
-    all_sprites.update()
     player.draw(screen)
-    player.update()
-    radar.draw(screen)
-    radar.update()
-    text.draw(f'FPS: {round(clock.get_fps())}')
+
+    fpslabel.draw(f'FPS: {round(clock.get_fps())}')
     for object in menu:
         object.update()
     pygame.display.flip()
