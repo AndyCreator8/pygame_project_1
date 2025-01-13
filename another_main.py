@@ -341,7 +341,7 @@ class Rocket(BasedMapObject):
         # self.add(rockets)
         self.sound = pygame.mixer.Sound('sounds/rct_launch.wav')
         self.sound.set_volume(0.2)
-        self.sound.play()
+        # self.sound.play()
         self.expl_sound = pygame.mixer.Sound('sounds/bomb_explotano.wav')
         self.expl_sound.set_volume(0.5)
         self.target = target
@@ -385,7 +385,7 @@ class Rocket(BasedMapObject):
                 self.killed = True
                 self.target.health -= self.damage
         else:
-            self.expl_sound.play()
+            # self.expl_sound.play()
             self.explosion()
 
 
@@ -469,7 +469,6 @@ class Bullet(BasedMapObject):
     def explosion(self):
         self.image = self.explosion_imgs[self.animation_sc]
         self.rect = self.image.get_rect(center=self.rect.center)
-
         self.animation_sc += 1
         # self.rect.x -= plane.vector.vx
         # self.rect.y += plane.vector.vy
@@ -483,10 +482,10 @@ class Plane(pygame.sprite.Sprite):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
         self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.wav")
-        self.mgsnd.set_volume(0.5)
+        self.mgsnd.set_volume(0.1)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
-        self.sound.play(loops=-1)
+        # self.sound.play(loops=-1)
         self.image = load_image('0.png', f'data/{name}', -1)
 
         self.mask = pygame.mask.from_surface(self.image)
@@ -532,6 +531,7 @@ class Plane(pygame.sprite.Sprite):
         self.vector = Vector(self.speed, 90)
 
         self.orig = self.image
+        self.firing = False
         self.animation_sc = 6
         self.prev_rocket_t = 0
         self.prev_bullet_t = 0
@@ -544,13 +544,9 @@ class Plane(pygame.sprite.Sprite):
         self.t += self.deltat
 
         key = pygame.key.get_pressed()
-        mouse = pygame.mouse.get_pressed()
-        if mouse[0]:
-            # self.mgsnd.play()
+
+        if self.firing:
             self.fire()
-        else:
-            pass
-            # self.mgsnd.stop()
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
@@ -626,6 +622,7 @@ class Plane(pygame.sprite.Sprite):
             Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
             self.bulletlimit -= 2
             self.prev_bullet_t = self.t
+        print('a')
 
     def closest(self):
         ses = [abs(x.get_vector_from_plane().value) for x in enemies.sprites()]
@@ -899,8 +896,6 @@ class Radar(pygame.sprite.Sprite):
 
 
 
-
-
 pygame.display.set_caption('BOOM')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
@@ -911,6 +906,8 @@ targets = pygame.sprite.Group()
 planes_sprites = pygame.sprite.Group()
 radar = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
+plane = None
+
 def start_game():
     global plane, map, tcr, target, r
     plane = Plane(**chosen_plane)
@@ -933,10 +930,19 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+        if plane:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                firing = True
+                plane.mgsnd.play()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                plane.mgsnd.stop()
+                firing = False
+    if plane:
+        if firing:
+            plane.fire()
     screen.fill((0, 0, 0))
-    all_sprites.update()
     all_sprites.draw(screen)
+    all_sprites.update()
     player.draw(screen)
     player.update()
     radar.draw(screen)
