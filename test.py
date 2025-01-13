@@ -1084,8 +1084,8 @@ while running:
     all_sprites.draw(screen)
     player.draw(screen)
     player.update()
-    radar.draw(screen)
     radar.update()
+    radar.draw(screen)
     fpslabel.draw(f'FPS: {round(clock.get_fps())}')
     for object in menu:
         object.update()

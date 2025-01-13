@@ -187,6 +187,7 @@ def pause_game():
     global menu, paused
     paused = True
     print(1)
+    plane.sound.stop()
     # paused = False
     menu = []
     backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE?"
@@ -207,6 +208,7 @@ def load_ingameui():
     paused = False
     params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
     in_game = True
+    plane.sound.play(loops=-1)
     menu = []
     # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
     # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
@@ -689,7 +691,7 @@ class Plane(pygame.sprite.Sprite):
         self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
-        self.sound.play(loops=-1)
+
         self.image = load_image('0.png', f'data/{name}', -1)
 
         self.mask = pygame.mask.from_surface(self.image)
@@ -747,13 +749,7 @@ class Plane(pygame.sprite.Sprite):
         self.t += self.deltat
 
         key = pygame.key.get_pressed()
-        mouse = pygame.mouse.get_pressed()
-        if mouse[0]:
-            # self.mgsnd.play()
-            self.fire()
-        else:
-            pass
-            # self.mgsnd.stop()
+
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
@@ -820,6 +816,7 @@ class Plane(pygame.sprite.Sprite):
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
+            self.mgsnd.play()
             angle_rad = math.radians(-self.vector.angle - 90)
             new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
             new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
@@ -1124,6 +1121,7 @@ load_menu()
 clock = pygame.time.Clock()
 firing = False
 running = True
+plane = None
 
 while running:
     # print(in_game)
@@ -1143,14 +1141,22 @@ while running:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
+        elif plane:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                firing = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                firing = False
+    if plane:
+        if firing:
+            plane.fire()
     if in_game and not paused:
         load_ingameui()
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
+    player.draw(screen)
     if not paused:
         all_sprites.update()
         player.update()
-    player.draw(screen)
 
     fpslabel.draw(f'FPS: {round(clock.get_fps())}')
     for object in menu:
