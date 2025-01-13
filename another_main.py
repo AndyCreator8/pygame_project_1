@@ -816,7 +816,6 @@ class Plane(pygame.sprite.Sprite):
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
-            self.mgsnd.play()
             angle_rad = math.radians(-self.vector.angle - 90)
             new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
             new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
@@ -1128,6 +1127,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if plane and not paused and in_game:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                firing = True
+                plane.mgsnd.play()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                plane.mgsnd.stop()
+                firing = False
         elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and in_game:
             if paused:
                 load_ingameui()
@@ -1141,16 +1147,11 @@ while running:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
-        elif plane:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
-                firing = True
-            elif event.type == pygame.MOUSEBUTTONUP:
-                firing = False
+    if in_game and not paused:
+        load_ingameui()
     if plane:
         if firing:
             plane.fire()
-    if in_game and not paused:
-        load_ingameui()
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
     player.draw(screen)
