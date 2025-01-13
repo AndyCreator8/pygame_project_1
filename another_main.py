@@ -5,7 +5,7 @@ import random
 import sys
 from math import sin, cos, acos, degrees, radians
 import pygame
-import screeninfo
+# import screeninfo
 
 pygame.init()
 map_size = 10000, 10000
@@ -826,8 +826,8 @@ class Enemy(BasedMapObject):
 
 
 class Target(BasedMapObject):
+    image = scale(load_image('Targets/plank.jpeg'), 100, 100)
     images = [scale(load_image('Targets/plank.jpeg'), 100, 100)]
-
     def __init__(self):
         arr = [i.pos for i in targets.sprites()]
         x, y = random.randint(0, width), random.randint(0, height)
@@ -905,6 +905,7 @@ targets.add(target)
 all_sprites.draw(screen)
 r = Radar(range=1000)
 enemy1 = Enemy(0, center, *planes[random.choice(list(planes.keys()))].values())
+# enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
 enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
 
 text = Text()
