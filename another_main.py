@@ -1043,6 +1043,7 @@ class Enemy(BasedMapObject):
 class Target(BasedMapObject):
     image = scale(load_image('Targets/plank.jpeg'), 100, 100)
     images = [scale(load_image('Targets/plank.jpeg'), 100, 100)]
+
     def __init__(self):
         arr = [i.pos for i in targets.sprites()]
         x, y = random.randint(0, width), random.randint(0, height)
@@ -1050,6 +1051,13 @@ class Target(BasedMapObject):
             x, y = random.randint(0, width), random.randint(0, height)
         self.pos = (x, y)
         super().__init__(random.choice(Target.images), Vector(), self.pos)
+        self.add(targets)
+        self.health = 400
+
+    def update(self):
+        if self.health <= 0:
+            self.kill()
+        super().update()
 
 
 class Radar(pygame.sprite.Sprite):
