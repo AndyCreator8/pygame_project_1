@@ -6,7 +6,6 @@ import sys
 from math import sin, cos, acos, degrees, radians
 import pygame
 # import screeninfo
-
 pygame.init()
 map_size = 10000, 10000
 # for monitor in screeninfo.get_monitors():
@@ -108,17 +107,20 @@ class Label():
 
 
 def playgame(era, level):
-    pass
+    start_game()
 
 
 def load_menu():
-    # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
-    # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
-    # title.update()
+    titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
+    title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
+    title.update()
 
     menucolor, menusize, menupos, menutext = (128, 0, 0), (200, 200), (width - 200, 200), "MENU"
     menu = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext, onclickFunction=lambda: pygame.quit(), onePress=True)
+    start = Button(*posf((500, 500), menusize), *menusize, color=menucolor, buttonText="START",
+                  onclickFunction=lambda: start_game(), onePress=True)
     menu.update()
+    start.update()
 
 
 def posf(targetpos, size):
@@ -542,6 +544,13 @@ class Plane(pygame.sprite.Sprite):
         self.t += self.deltat
 
         key = pygame.key.get_pressed()
+        mouse = pygame.mouse.get_pressed()
+        if mouse[0]:
+            # self.mgsnd.play()
+            self.fire()
+        else:
+            pass
+            # self.mgsnd.stop()
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
@@ -603,6 +612,8 @@ class Plane(pygame.sprite.Sprite):
                         print('Ракета перезаряжаются')
                 else:
                     print("Противников не обнаружено")
+
+
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
@@ -703,7 +714,6 @@ class Enemy(BasedMapObject):
         except ZeroDivisionError:
             pass
         if self.health > 0:
-            print(self.get_angle(self.v.angle))
             self.image = pygame.transform.rotate(self.animations[self.animation_sc], self.v.angle - 90)
             self.mask = pygame.mask.from_surface(self.image)
             self.rect = self.image.get_rect(center=self.rect.center)
@@ -754,19 +764,21 @@ class Enemy(BasedMapObject):
         # self.v = Vector(self.v.value, plane.vector.angle)
         # self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         angle, range = self.get_angle(self.v.angle)
-        self.circle_attack(angle)
-        if -130 > angle > -190:
+        if -175 > angle > -195:
+            if -150 > angle > -210:
+                if range < 700:
+                    self.shoot()
             if self.animation_sc < 6:
                 self.animation_sc += 1
             elif self.animation_sc > 6:
                 self.animation_sc -= 1
-            if range < 700 and -170 > angle > -190:
-                self.shoot()
             if range > 200:
                 if self.rockets and self.t - self.prev_rocket_t >= 2 and self.rocketlimit:
                     Rocket(Vector(20, self.v.angle), self.rect.center, plane)
                     self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
+        else:
+            self.circle_attack(angle)
 
     def get_angle(self, angle):
         ans = math.degrees(0)
@@ -884,7 +896,11 @@ class Radar(pygame.sprite.Sprite):
         self.caught = newarr
 
 
-pygame.init()
+
+
+
+
+
 pygame.display.set_caption('BOOM')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
@@ -892,49 +908,37 @@ horizontal_borders = pygame.sprite.Group()
 vertical_borders = pygame.sprite.Group()
 player = pygame.sprite.Group()
 targets = pygame.sprite.Group()
-rockets = pygame.sprite.Group()
-bullets = pygame.sprite.Group()
 planes_sprites = pygame.sprite.Group()
 radar = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
-plane = Plane(**chosen_plane)
-map = Map()
-tcr = TargetCross()
-target = Target()
-targets.add(target)
-all_sprites.draw(screen)
-r = Radar(range=1000)
-enemy1 = Enemy(0, center, *planes[random.choice(list(planes.keys()))].values())
-# enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
-enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
+def start_game():
+    global plane, map, tcr, target, r
+    plane = Plane(**chosen_plane)
+    map = Map()
+    tcr = TargetCross()
+    target = Target()
+    r = Radar(range=1000)
+    enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
+    # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
+    enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
 
 text = Text()
 load_menu()
-play("salam.mp3")
+# play("salam.mp3")
 clock = pygame.time.Clock()
 firing = False
 running = True
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
-            firing = True
-            plane.mgsnd.play()
-        elif event.type == pygame.MOUSEBUTTONUP:
-            plane.mgsnd.stop()
-            firing = False
-    if firing:
-        plane.fire()
+
     screen.fill((0, 0, 0))
     all_sprites.update()
     all_sprites.draw(screen)
-    rockets.draw(screen)
-    rockets.update()
     player.draw(screen)
     player.update()
-    bullets.draw(screen)
-    bullets.update()
     radar.draw(screen)
     radar.update()
     text.draw(f'FPS: {round(clock.get_fps())}')
