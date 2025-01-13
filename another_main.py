@@ -1102,7 +1102,6 @@ class Radar(pygame.sprite.Sprite):
                 pygame.draw.circle(screen, (0, 255, 0), tuple(self.caught[i][:2]), 5)
         self.caught = newarr
 
-
 pygame.display.set_caption('A STORM ON A HOT DAY')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
@@ -1127,14 +1126,15 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if plane and not paused and in_game:
+        elif plane in planes_sprites:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                print('a')
                 firing = True
                 plane.mgsnd.play()
             elif event.type == pygame.MOUSEBUTTONUP:
                 plane.mgsnd.stop()
                 firing = False
-        elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and in_game:
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE and in_game:
             if paused:
                 load_ingameui()
             else:
@@ -1147,18 +1147,19 @@ while running:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
-    if in_game and not paused:
+    if in_game and paused is False:
         load_ingameui()
     if plane:
         if firing:
             plane.fire()
+
     screen.fill((0, 0, 0))
+
     all_sprites.draw(screen)
     player.draw(screen)
-    if not paused:
+    if paused is False:
         all_sprites.update()
         player.update()
-
     fpslabel.draw(f'FPS: {round(clock.get_fps())}')
     for object in menu:
         object.update()
