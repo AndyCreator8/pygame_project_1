@@ -15,9 +15,10 @@ screen = pygame.display.set_mode((1200, 700))
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
-in_game = True
+in_game = False
 paused = True
 boolparams = True
+params = {}
 menu = []
 
 with open('data/planes.json', 'r', encoding='utf8') as file:
@@ -50,7 +51,9 @@ def wait(time):
 
 
 def load_game(era, level):
-    global planes, map, tcr, target, r, plane
+    global planes, map, tcr, target, r, plane, in_game, paused
+    in_game = True
+    paused = False
     if era == 1:
         i = 4
     elif era == 2:
@@ -83,11 +86,15 @@ def load_erachoice():
 
     era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "ERA II"
     era2 = Button(*posf(era2pos, era2size), *era2size, color=era2color, buttonText=era2text,
-                  onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_era2lvls, onePress=True, fontsize=75, bold=True)
 
     era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "ERA III"
     era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
                   onclickFunction=load_ingameui, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
 
 
 def load_era1lvls():
@@ -114,6 +121,39 @@ def load_era1lvls():
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
                   onclickFunction=load_game, onclickParams={"era":1, "level":5}, onePress=True, fontsize=75, bold=True)
 
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+
+
+def load_era2lvls():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":1}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":2}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":3}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL VI"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":4}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":5}, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+
 
 def posf(targetpos, size):
     return (targetpos[0] - size[0] // 2, targetpos[1] - size[1] // 2)
@@ -121,7 +161,17 @@ def posf(targetpos, size):
 
 def load_menu():
     wait(0.125)
-    global menu, in_game
+    global menu, in_game, all_sprites, horizontal_borders, vertical_borders, player, targets, planes_sprites, radar, enemies
+
+    all_sprites = pygame.sprite.Group()
+    horizontal_borders = pygame.sprite.Group()
+    vertical_borders = pygame.sprite.Group()
+    player = pygame.sprite.Group()
+    targets = pygame.sprite.Group()
+    planes_sprites = pygame.sprite.Group()
+    radar = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+
     in_game = False
     menu = []
     playcolor, playsize, playpos, playtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "PLAY"
@@ -132,13 +182,17 @@ def load_menu():
                   onclickFunction=pygame.quit, onePress=True, fontsize=75, bold=True)
 
 
-def pause_game(params):
-    wait(0.125)
-    global menu
+def pause_game():
+    # wait(0.125)
+    global menu, paused
+    paused = True
+    print(1)
+    plane.sound.stop()
+    # paused = False
     menu = []
     backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE?"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
-                  onclickFunction=load_ingameui, onclickParams={"params": params},
+                  onclickFunction=load_ingameui,
                   onePress=True, fontsize=75, bold=True)
     exittomenucolor, exittomenusize, exittomenupos, exittomenutext = (128, 0, 0), (500, 200), (
     width // 2, height // 2 + 110), "MAIN MENU"
@@ -149,9 +203,12 @@ def pause_game(params):
     # exittomenu.update()
 
 
-def load_ingameui(params):
-    global menu, boolparams, in_game
+def load_ingameui():
+    global menu, boolparams, in_game, params, plane, paused
+    paused = False
+    params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
     in_game = True
+    plane.sound.play(loops=-1)
     menu = []
     # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
     # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
@@ -162,7 +219,7 @@ def load_ingameui(params):
                      onclickFunction=pause_game, onePress=True, fontsize=75, bold=True)
     # menubtn.update()
     if boolparams:
-        x, y = width - 200, 150
+        x, y = width - 200, 0
         prcolor, prfontsize, prh = (255, 255, 255), 40, 100
         for i in params:
             y += prh
@@ -634,7 +691,7 @@ class Plane(pygame.sprite.Sprite):
         self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
-        self.sound.play(loops=-1)
+
         self.image = load_image('0.png', f'data/{name}', -1)
 
         self.mask = pygame.mask.from_surface(self.image)
@@ -692,13 +749,7 @@ class Plane(pygame.sprite.Sprite):
         self.t += self.deltat
 
         key = pygame.key.get_pressed()
-        mouse = pygame.mouse.get_pressed()
-        if mouse[0]:
-            # self.mgsnd.play()
-            self.fire()
-        else:
-            pass
-            # self.mgsnd.stop()
+
         if key[pygame.K_w]:
             if self.throttle + self.deltat / 10 <= 1:
                 self.throttle += self.deltat / 10
@@ -765,6 +816,7 @@ class Plane(pygame.sprite.Sprite):
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
+            self.mgsnd.play()
             angle_rad = math.radians(-self.vector.angle - 90)
             new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
             new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
@@ -988,6 +1040,7 @@ class Enemy(BasedMapObject):
 class Target(BasedMapObject):
     image = scale(load_image('Targets/plank.jpeg'), 100, 100)
     images = [scale(load_image('Targets/plank.jpeg'), 100, 100)]
+
     def __init__(self):
         arr = [i.pos for i in targets.sprites()]
         x, y = random.randint(0, width), random.randint(0, height)
@@ -995,6 +1048,13 @@ class Target(BasedMapObject):
             x, y = random.randint(0, width), random.randint(0, height)
         self.pos = (x, y)
         super().__init__(random.choice(Target.images), Vector(), self.pos)
+        self.add(targets)
+        self.health = 400
+
+    def update(self):
+        if self.health <= 0:
+            self.kill()
+        super().update()
 
 
 class Radar(pygame.sprite.Sprite):
@@ -1061,8 +1121,10 @@ load_menu()
 clock = pygame.time.Clock()
 firing = False
 running = True
+plane = None
 
 while running:
+    # print(in_game)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -1070,22 +1132,32 @@ while running:
             if paused:
                 load_ingameui()
             else:
+                print("pause")
                 pause_game()
-            paused = not paused
+            # paused = not paused
             # Maybe
             boolparams = True
         elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
-
+        elif plane:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                firing = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                firing = False
+    if plane:
+        if firing:
+            plane.fire()
+    if in_game and not paused:
+        load_ingameui()
     screen.fill((0, 0, 0))
-    all_sprites.update()
     all_sprites.draw(screen)
     player.draw(screen)
-    player.update()
-    radar.draw(screen)
-    radar.update()
+    if not paused:
+        all_sprites.update()
+        player.update()
+
     fpslabel.draw(f'FPS: {round(clock.get_fps())}')
     for object in menu:
         object.update()
