@@ -64,26 +64,26 @@ def load_game(era, level):
     in_game = True
     paused = False
     if era == 1:
-        i = 4
+        i = 4, 2, 7
     elif era == 2:
-        i = 0
+        i = 0, 5, 7
     else:
-        i = 3
-    chosen_plane = planes[list(planes.keys())[i]]
+        i = 3, 1
+    chosen_plane = planes[list(planes.keys())[random.choice(i)]]
     print(chosen_plane)
     enemytypes = [[], [4, 2, 7], [0, 5, 7], [1, 3]]
     plane = Plane(**chosen_plane)
     map = Map()
     tcr = TargetCross()
     target = Target()
-    r = Radar(range=1000)
+    r = Radar(range=2000)
     enemiesc = level
     enemyvars = enemytypes[era]
     print(enemyvars)
     for i in range(enemiesc):
         j = random.choice(enemyvars)
         print(j)
-        Enemy(0, (1000, 1000), **planes[list(planes.keys())[j]])
+        Enemy(0, (random.choice(range(-4000, 4000)), random.choice(range(-4000, 4000))), **planes[list(planes.keys())[j]])
     #enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
     # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
     #enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
@@ -272,7 +272,7 @@ def pause_game():
     menu = []
     backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
-                  onclickFunction=load_ingameui,
+                  onclickFunction=continue_game,
                   onePress=True, fontsize=75, bold=True)
     exittomenucolor, exittomenusize, exittomenupos, exittomenutext = (128, 0, 0), (500, 200), (
     width // 2, height // 2 + 110), "MAIN MENU"
@@ -283,12 +283,16 @@ def pause_game():
     # exittomenu.update()
 
 
+def continue_game():
+    plane.sound.play(loops=-1)
+    load_ingameui()
+
 def load_ingameui():
     global menu, boolparams, in_game, params, plane, paused
     paused = False
     params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
     in_game = True
-    plane.sound.play(loops=-1)
+
     menu = []
     # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
     # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
@@ -763,7 +767,7 @@ class Bullet(BasedMapObject):
 
 
 class Plane(pygame.sprite.Sprite):
-    def __init__(self, name, health, max_speed, mobility, max_bullets, rockets, max_rockets,
+    def __init__(self, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
@@ -771,17 +775,23 @@ class Plane(pygame.sprite.Sprite):
         self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
-
+        self.sound.play(loops=-1)
+        self.explosion_imgs = []
         self.image = load_image('0.png', f'data/{name}', -1)
-
+        for i in range(0, 5):
+            self.explosion_imgs.append(
+                scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.image.get_width() * size, self.image.get_height() * size))
+            self.explosion_imgs.append(
+                scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.image.get_width() * size, self.image.get_height() * size))
         self.mask = pygame.mask.from_surface(self.image)
         self.animations = []
         self.animations_shoot = []
+        self.explosion_sc = 0
         for i in range(-3, 4):
             img = load_image(f'{i}.png', f'data/{name}', -1)
-            self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+            self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
             if i != 0:
-                self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+                self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
         self.bulletlimit = max_bullets
         self.rocketlimit = max_rockets
         self.bulletspeed = bullet_speed
@@ -824,7 +834,7 @@ class Plane(pygame.sprite.Sprite):
     def update(self, *args, **kwargs):
         # print(self.health)
         if self.health <= 0:
-            load_results()
+            self.explosion()
         self.deltat = self.tick() / 1000
         self.t += self.deltat
 
@@ -885,7 +895,7 @@ class Plane(pygame.sprite.Sprite):
                     enemy = self.closest()
                     if self.t - self.prev_rocket_t >= 1:
                         self.rocketlimit -= 1
-                        Rocket(Vector(20, self.vector.angle), self.rect.center, enemy, self.rctdmg)
+                        Rocket(Vector(25, self.vector.angle), self.rect.center, enemy, self.rctdmg)
                         self.prev_rocket_t = self.t
                     else:
                         print('Ракета перезаряжаются')
@@ -908,6 +918,16 @@ class Plane(pygame.sprite.Sprite):
         ses = [abs(x.get_vector_from_plane().value) for x in enemies.sprites()]
         # print(ses)
         return min(enemies.sprites(), key=lambda x: abs(x.get_vector_from_plane().value))
+
+    def explosion(self):
+        prev_rect = self.rect.center
+        self.image = self.explosion_imgs[self.explosion_sc]
+        self.rect = self.image.get_rect()
+        self.rect.center = prev_rect
+        self.explosion_sc += 1
+        if self.explosion_sc == 10:
+            load_results()
+            self.kill()
 
 
 class TargetCross(pygame.sprite.Sprite):
@@ -942,7 +962,7 @@ class TargetCross(pygame.sprite.Sprite):
 class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/Me 163', -1)
 
-    def __init__(self, angle, pos, name, health, max_speed, mobility, max_bullets, rockets, max_rockets,
+    def __init__(self, angle, pos, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage=0):
         super().__init__(Enemy.image, Vector(max_speed, angle), pos)
         self.add(enemies, planes_sprites)
@@ -951,9 +971,9 @@ class Enemy(BasedMapObject):
         self.animations = []
         for i in range(-3, 4):
             img = load_image(f'{i}.png', f'data/{name}', -1)
-            self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+            self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
             if i != 0:
-                self.animations.append(scale(img, img.get_width() // 2, img.get_height() // 2))
+                self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
         self.explosion_imgs = []
         for i in range(0, 5):
             self.explosion_imgs.append(scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.size[0], self.size[1]))
@@ -1053,7 +1073,7 @@ class Enemy(BasedMapObject):
                 self.animation_sc -= 1
             if range > 200:
                 if self.rockets and self.t - self.prev_rocket_t >= 2 and self.rocketlimit:
-                    Rocket(Vector(20, self.v.angle), self.rect.center, plane)
+                    Rocket(Vector(25, self.v.angle), self.rect.center, plane)
                     self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
         else:
@@ -1214,19 +1234,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif plane in planes_sprites:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
-                print('a')
-                firing = True
-                plane.mgsnd.play()
-            elif event.type == pygame.MOUSEBUTTONUP:
-                plane.mgsnd.stop()
-                firing = False
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE and in_game:
             if paused:
+                plane.sound.play()
                 load_ingameui()
             else:
                 print("pause")
+
                 pause_game()
             # paused = not paused
             # Maybe
@@ -1235,6 +1249,14 @@ while running:
             print("tab changed")
             boolparams = not boolparams
             load_ingameui()
+        elif plane in planes_sprites:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT and paused is False:
+                print('a')
+                firing = True
+                plane.mgsnd.play()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                plane.mgsnd.stop()
+                firing = False
     if in_game and paused is False:
         load_ingameui()
     if plane:
