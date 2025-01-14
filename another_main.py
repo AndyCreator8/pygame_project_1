@@ -730,18 +730,16 @@ class Bullet(BasedMapObject):
     def __init__(self, vector, pos, damage=0.1, spread=4):
         # self.add(bullets)
         super().__init__(Bullet.image, vector, pos)
-        self.image.fill('white')
+        self.image.fill('black')
         self.orig = self.image
         self.rect = self.image.get_rect()
         self.size = self.image.get_size()
         self.rect.x, self.rect.y = posf(pos, self.size)
-
-        self.image.fill('white')
         self.orig = self.image
         self.explosion_imgs = [scale(load_image(f'{i // 2}.png', 'data/rocket_explosion_animation', -1), 20, 20) for i in
                                range(22)]
         self.animation_sc = 0
-        self.distance = 1000
+        self.distance = 3000
         self.killed = False
         self.damage = damage
         self.spread = spread
