@@ -75,7 +75,7 @@ def load_game(era, level):
     map = Map()
     tcr = TargetCross()
     target = Target()
-    r = Radar(range=2000)
+    r = Radar(range=4000)
     enemiesc = level
     enemyvars = enemytypes[era]
     print(enemyvars)
@@ -550,7 +550,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(60)
+        self.tick = lambda: self.clock.tick(120)
 
     def update(self, *args):
         self.realv = self.v - plane.vector
@@ -644,8 +644,10 @@ class Bomb(BasedMapObject):
 
 
 class Rocket(BasedMapObject):
-    def __init__(self, vector, pos, target, damage=25, image=scale(load_image('missile.png'), 15, 73)):
+    def __init__(self, vector, pos, target, parent, damage=25):
+        image = scale(load_image('missile.png'), 15, 73)
         # self.add(rockets)
+        self.parent = parent
         self.sound = pygame.mixer.Sound('sounds/rct_launch.wav')
         self.sound.set_volume(0.2)
         self.sound.play()
@@ -664,7 +666,7 @@ class Rocket(BasedMapObject):
         self.size = self.image.get_size()
         self.rect.x, self.rect.y = posf(pos, self.size)
         self.v = vector
-        self.distance = 3000
+        self.distance = 10000
         self.tv = self.rect.centerx - self.target.rect.centerx, self.rect.centery - self.target.rect.centery
 
     def update(self, *args):
@@ -715,6 +717,7 @@ class Rocket(BasedMapObject):
             return 0
 
     def explosion(self):
+        self.parent.launched_rockets -= 1
         self.image = self.explosion_imgs[self.animation_sc]
         self.rect = self.image.get_rect()
         self.rect.center = self.target.rect.center
@@ -817,6 +820,7 @@ class Plane(pygame.sprite.Sprite):
         self.rctdmg = rocket_damage
         self.health = self.maxhealth = health
         self.rockets = rockets
+        self.launched_rockets = 0
         self.bombing = False
         self.bomblimit = max_bombs
         self.autobombing = False
@@ -830,7 +834,7 @@ class Plane(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(60)
+        self.tick = lambda: self.clock.tick(120)
         self.deltat = 0
 
         self.rect = self.image.get_rect()
@@ -908,12 +912,13 @@ class Plane(pygame.sprite.Sprite):
             self.bombing = False
 
         if key[pygame.K_f] and self.rockets:
-            if self.rocketlimit:
+            if self.rocketlimit and self.launched_rockets < 2 and self.t - self.prev_rocket_t >= 4:
                 if enemies.sprites():
                     enemy = self.closest()
                     if self.t - self.prev_rocket_t >= 1:
                         self.rocketlimit -= 1
-                        Rocket(Vector(25, self.vector.angle), self.rect.center, enemy, self.rctdmg)
+                        self.launched_rockets += 1
+                        Rocket(Vector(25, self.vector.angle), self.rect.center, enemy, self, self.rctdmg)
                         self.prev_rocket_t = self.t
                     else:
                         print('Ракета перезаряжаются')
@@ -948,6 +953,8 @@ class Plane(pygame.sprite.Sprite):
         self.rect.center = prev_rect
         self.explosion_sc += 1
         self.explotionsnd.play()
+        self.sound.stop()
+        self.mgsnd.stop()
         if self.explosion_sc == 10:
             load_results()
             self.kill()
@@ -1018,6 +1025,7 @@ class Enemy(BasedMapObject):
         self.range = r.range
         self.bulletlimit = max_bullets
         self.rocketlimit = max_rockets
+        self.launched_rockets = 0
         self.bulletspeed = bullet_speed
         self.bltdmg = bullet_damage
         self.rctdmg = rocket_damage
@@ -1097,8 +1105,9 @@ class Enemy(BasedMapObject):
             elif self.animation_sc > 6:
                 self.animation_sc -= 1
             if range > 200:
-                if self.rockets and self.t - self.prev_rocket_t >= 2 and self.rocketlimit:
-                    Rocket(Vector(25, self.v.angle), self.rect.center, plane)
+                if self.rockets and self.launched_rockets < 2 and self.rocketlimit and self.t - self.prev_rocket_t >= 4:
+                    self.launched_rockets += 1
+                    Rocket(Vector(25, self.v.angle), self.rect.center, plane, self)
                     self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
         else:
@@ -1184,6 +1193,8 @@ class Target(BasedMapObject):
         if self.health <= 0:
             global results
             results["Ground targets destroyed"] += 1
+            plane.rocketlimit += 5
+            plane.bulletlimit += 600
             self.kill()
         super().update()
 
@@ -1301,5 +1312,5 @@ while running:
         object.update()
     pygame.display.flip()
     if not paused:
-        t += clock.tick(30) / 1000
+        t += clock.tick(60) / 1000
 pygame.quit()
