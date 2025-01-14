@@ -20,6 +20,14 @@ paused = True
 boolparams = True
 params = {}
 menu = []
+results = {
+    "Planes destroyed": 0,
+    "Ground targets destroyed": 0,
+    "Damage dealt": 0,
+    "Damage taken": 0,
+    "Time survived": 0,
+    "status": "DRAW"
+}
 
 with open('data/planes.json', 'r', encoding='utf8') as file:
     planes = json.load(file)
@@ -51,7 +59,8 @@ def wait(time):
 
 
 def load_game(era, level):
-    global planes, map, tcr, target, r, plane, in_game, paused
+    global planes, map, tcr, target, r, plane, in_game, paused, t
+    t = 0
     in_game = True
     paused = False
     if era == 1:
@@ -62,35 +71,77 @@ def load_game(era, level):
         i = 3
     chosen_plane = planes[list(planes.keys())[i]]
     print(chosen_plane)
-    enemytypes = [[], [4, 2, 7], [0, 5, 7, 8], [1, 3]]
+    enemytypes = [[], [4, 2, 7], [0, 5, 7], [1, 3]]
     plane = Plane(**chosen_plane)
     map = Map()
     tcr = TargetCross()
     target = Target()
     r = Radar(range=1000)
     enemiesc = level
+    enemyvars = enemytypes[era]
+    print(enemyvars)
     for i in range(enemiesc):
-        Enemy(0, (1000, 1000), *planes[list(planes.keys())[random.choice(enemytypes[era])]].values())
+        j = random.choice(enemyvars)
+        print(j)
+        Enemy(0, (1000, 1000), **planes[list(planes.keys())[j]])
     #enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
     # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
     #enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
+
+
+def load_results():
+    global results, enemies, targets, plane, in_game, t, width, height, paused
+    if not in_game:
+        return None
+    paused = True
+    for i in enemies.sprites():
+        results["Damage dealt"] += i.dmgtkn
+    for i in targets.sprites():
+        results["Damage dealt"] += i.dmgtkn
+    results["Damage taken"] = plane.maxhealth - plane.health
+    results["Time survived"] = round(t, 2)
+
+    titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 300), (255, 255, 255), 75
+    title = Text(titlepos, f"A STORM ON A HOT DAY", fontsize=titlefontsize, fontcolor=titlecolor, bold=True)
+
+    pdpos, pdcolor, pdfontsize = (width // 2, height // 2 - 200), (255, 255, 255), 75
+    pd = Text(pdpos, f"Planes destroyed: {results['Planes destroyed']}", fontsize=pdfontsize, fontcolor=pdcolor)
+
+    gtdpos, gtdcolor, gtdfontsize = (width // 2, height // 2 - 100), (255, 255, 255), 75
+    gtd = Text(gtdpos, f"Ground targets destroyed: {results['Ground targets destroyed']}", fontsize=gtdfontsize, fontcolor=gtdcolor)
+
+    ddpos, ddcolor, ddfontsize = (width // 2, height // 2), (255, 255, 255), 75
+    dd = Text(ddpos, f"Damage dealt: {results['Damage dealt']}", fontsize=ddfontsize,
+               fontcolor=ddcolor)
+
+    dtpos, dtcolor, dtfontsize = (width // 2, height // 2 + 100), (255, 255, 255), 75
+    dt = Text(dtpos, f"Damage taken: {results['Damage taken']}", fontsize=dtfontsize,
+              fontcolor=dtcolor)
+
+    dtpos, dtcolor, dtfontsize = (width // 2, height // 2 + 200), (255, 255, 255), 75
+    dt = Text(dtpos, f"Time survived: {results['Time survived']}", fontsize=dtfontsize,
+              fontcolor=dtcolor)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
 
 
 def load_erachoice():
     wait(0.125)
     global menu
     menu = []
-    era1color, era1size, era1pos, era1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "ERA I"
+    era1color, era1size, era1pos, era1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "WW1"
     era1 = Button(*posf(era1pos, era1size), *era1size, color=era1color, buttonText=era1text,
                   onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
 
-    era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "ERA II"
+    era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "WW2"
     era2 = Button(*posf(era2pos, era2size), *era2size, color=era2color, buttonText=era2text,
                   onclickFunction=load_era2lvls, onePress=True, fontsize=75, bold=True)
 
-    era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "ERA III"
+    era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "COLD WAR"
     era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
-                  onclickFunction=load_ingameui, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_era3lvls, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
@@ -113,7 +164,7 @@ def load_era1lvls():
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
                   onclickFunction=load_game, onclickParams={"era":1, "level":3}, onePress=True, fontsize=75, bold=True)
 
-    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL VI"
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
                   onclickFunction=load_game, onclickParams={"era":1, "level":4}, onePress=True, fontsize=75, bold=True)
 
@@ -142,13 +193,42 @@ def load_era2lvls():
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
                   onclickFunction=load_game, onclickParams={"era":2, "level":3}, onePress=True, fontsize=75, bold=True)
 
-    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL VI"
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
                   onclickFunction=load_game, onclickParams={"era":2, "level":4}, onePress=True, fontsize=75, bold=True)
 
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
                   onclickFunction=load_game, onclickParams={"era":2, "level":5}, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+
+
+def load_era3lvls():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":3, "level":1}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":3, "level":2}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":3, "level":3}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":3, "level":4}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":3, "level":5}, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
@@ -190,7 +270,7 @@ def pause_game():
     plane.sound.stop()
     # paused = False
     menu = []
-    backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE?"
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "CONTINUE"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
                   onclickFunction=load_ingameui,
                   onePress=True, fontsize=75, bold=True)
@@ -707,7 +787,7 @@ class Plane(pygame.sprite.Sprite):
         self.bulletspeed = bullet_speed
         self.blltdmg = bullet_damage
         self.rctdmg = rocket_damage
-        self.health = health
+        self.health = self.maxhealth = health
         self.rockets = rockets
         self.bombing = False
         self.bomblimit = max_bombs
@@ -744,7 +824,7 @@ class Plane(pygame.sprite.Sprite):
     def update(self, *args, **kwargs):
         # print(self.health)
         if self.health <= 0:
-            pygame.quit()
+            load_results()
         self.deltat = self.tick() / 1000
         self.t += self.deltat
 
@@ -811,8 +891,6 @@ class Plane(pygame.sprite.Sprite):
                         print('Ракета перезаряжаются')
                 else:
                     print("Противников не обнаружено")
-
-
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
@@ -898,12 +976,14 @@ class Enemy(BasedMapObject):
         self.bulletspeed = bullet_speed
         self.bltdmg = bullet_damage
         self.rctdmg = rocket_damage
-        self.health = health
+        self.health = self.maxhealth = health
+        self.dmgtkn = 0
         self.maxspeed = max_speed
         self.mobility = mobility
         self.status = None
 
     def update(self):
+        self.dmgtkn = self.maxhealth - self.health
         try:
             angle, range = self.get_angle(self.v.angle)
             if range <= self.range:
@@ -1017,6 +1097,8 @@ class Enemy(BasedMapObject):
         self.explosion_sc += 1
 
         if self.explosion_sc == 10:
+            global results
+            results["Planes destroyed"] += 1
             self.kill()
 
     def get_vector_from_plane(self):
@@ -1048,10 +1130,14 @@ class Target(BasedMapObject):
         self.pos = (x, y)
         super().__init__(random.choice(Target.images), Vector(), self.pos)
         self.add(targets)
-        self.health = 400
+        self.health = self.maxhealth = 400
+        self.dmgtkn = 0
 
     def update(self):
+        self.dmgtkn = self.maxhealth - self.health
         if self.health <= 0:
+            global results
+            results["Ground targets destroyed"] += 1
             self.kill()
         super().update()
 
@@ -1102,6 +1188,7 @@ class Radar(pygame.sprite.Sprite):
                 pygame.draw.circle(screen, (0, 255, 0), tuple(self.caught[i][:2]), 5)
         self.caught = newarr
 
+
 pygame.display.set_caption('A STORM ON A HOT DAY')
 screen.fill((255, 255, 255))
 all_sprites = pygame.sprite.Group()
@@ -1117,6 +1204,7 @@ fpslabel = FPS()
 load_menu()
 # play("salam.mp3")
 clock = pygame.time.Clock()
+t = 0
 firing = False
 running = True
 plane = None
@@ -1164,5 +1252,6 @@ while running:
     for object in menu:
         object.update()
     pygame.display.flip()
-    clock.tick(30)
+    if not paused:
+        t += clock.tick(30) / 1000
 pygame.quit()
