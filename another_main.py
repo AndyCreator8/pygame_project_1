@@ -5,13 +5,12 @@ import random
 import sys
 from math import sin, cos, acos, degrees, radians
 import pygame
-# import screeninfo
+import screeninfo
 pygame.init()
 map_size = 10000, 10000
-# for monitor in screeninfo.get_monitors():
-#     screen = pygame.display.set_mode((monitor.width, monitor.height - 100)
-#     break
-screen = pygame.display.set_mode((1200, 700))
+for monitor in screeninfo.get_monitors():
+    screen = pygame.display.set_mode((monitor.width, monitor.height), pygame.FULLSCREEN)
+    break
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
@@ -579,7 +578,7 @@ class Bomb(BasedMapObject):
     def __init__(self, damage=200):
         self.dmg = damage
         self.bombsize = self.dmg // 2
-        self.boomsize = self.bombsize
+        self.boomsize = self.bombsize * 4
         self.cratersize = self.boomsize // 2
         # self.bombsize = 100
         # self.boomsize = self.bombsize
@@ -591,11 +590,22 @@ class Bomb(BasedMapObject):
         self.snd = pygame.mixer.Sound("sounds/bombsnd.wav")
         self.snd.set_volume(0.1)
         self.snd.play()
+        self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
+        self.explotionsnd.set_volume(0.4)
+        self.explosion_imgs = []
+        for i in range(0, 5):
+            self.explosion_imgs.append(
+                scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.boomsize,
+                      self.boomsize))
+            self.explosion_imgs.append(
+                scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.boomsize,
+                      self.boomsize))
         # self.image = rotate(self.image, (plane.vector.angle + 270) % 360)
         self.rect = self.image.get_rect()
         self.rect.move(*self.realv.get_int_xy())
         self.rect.x, self.rect.y = posf(self.pos, self.size)
         self.size = (self.bombsize, self.bombsize)
+        self.explosion_sc = 0
         self.flytime = 3
         self.expltime = 2
         self.status = "bomb"
@@ -610,10 +620,16 @@ class Bomb(BasedMapObject):
             self.image = scale(self.bomb, *self.size)
             self.image = rotate(self.image, self.v.angle - 90)
         elif self.t >= self.flytime and self.status == "bomb":
-            self.status = "boom"
             self.v = Vector()
-            self.image = self.boom
+            prev_rect = self.rect.center
+            self.explotionsnd.play()
+            self.image = self.explosion_imgs[self.explosion_sc]
+            self.rect = self.image.get_rect()
+            self.rect.center = prev_rect
+            self.explosion_sc += 1
             self.size = (self.boomsize, self.boomsize)
+            if self.explosion_sc == 10:
+                self.status = "boom"
         elif self.t >= self.flytime + self.expltime and self.status == "boom":
             self.status = "crater"
             self.image = self.crater
@@ -623,6 +639,8 @@ class Bomb(BasedMapObject):
             t = pygame.sprite.spritecollideany(self, targets)
             if pygame.sprite.collide_mask(self, t):
                 t.health -= self.dmg
+
+
 
 
 class Rocket(BasedMapObject):
@@ -792,6 +810,8 @@ class Plane(pygame.sprite.Sprite):
             self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
             if i != 0:
                 self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
+        self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
+        self.explotionsnd.set_volume(0.4)
         self.bulletlimit = max_bullets
         self.rocketlimit = max_rockets
         self.bulletspeed = bullet_speed
@@ -901,6 +921,10 @@ class Plane(pygame.sprite.Sprite):
                         print('Ракета перезаряжаются')
                 else:
                     print("Противников не обнаружено")
+        if pygame.sprite.spritecollideany(self, enemies):
+            target = pygame.sprite.spritecollideany(self, enemies)
+            if pygame.sprite.collide_mask(self, target):
+                self.explosion()
 
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
@@ -925,6 +949,7 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = prev_rect
         self.explosion_sc += 1
+        self.explotionsnd.play()
         if self.explosion_sc == 10:
             load_results()
             self.kill()
@@ -982,6 +1007,8 @@ class Enemy(BasedMapObject):
         self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
+        self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
+        self.explotionsnd.set_volume(0.4)
         self.caught = False
         self.target = plane
         self.rockets = rockets
@@ -1115,6 +1142,7 @@ class Enemy(BasedMapObject):
         self.rect = self.image.get_rect()
         self.rect.center = prev_rect
         self.explosion_sc += 1
+        self.explotionsnd.play()
 
         if self.explosion_sc == 10:
             global results
