@@ -27,6 +27,7 @@ results = {
     "Time survived": 0,
     "status": "DRAW"
 }
+era2, level2 = 1, 1
 
 with open('data/planes.json', 'r', encoding='utf8') as file:
     planes = json.load(file)
@@ -58,7 +59,8 @@ def wait(time):
 
 
 def load_game(era, level):
-    global planes, map, tcr, target, r, plane, in_game, paused, t
+    global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2
+    era2, level2 = era, level
     t = 0
     in_game = True
     paused = False
@@ -75,7 +77,7 @@ def load_game(era, level):
     map = Map()
     tcr = TargetCross()
     target = Target()
-    r = Radar(range=4000)
+    r = Radar(range=4000, rtspeed=3 + era)
     enemiesc = level
     enemyvars = enemytypes[era]
     print(enemyvars)
@@ -89,7 +91,14 @@ def load_game(era, level):
 
 
 def load_results():
-    global results, enemies, targets, plane, in_game, t, width, height, paused
+    global results, enemies, targets, plane, planes_sprites, all_sprites, in_game, t, width, height, paused, menu, era2, level2, player, radar
+    all_sprites = pygame.sprite.Group()
+    player = pygame.sprite.Group()
+    targets = pygame.sprite.Group()
+    planes_sprites = pygame.sprite.Group()
+    radar = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+    menu = []
     if not in_game:
         return None
     paused = True
@@ -100,8 +109,11 @@ def load_results():
     results["Damage taken"] = plane.maxhealth - plane.health
     results["Time survived"] = round(t, 2)
 
-    titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 300), (255, 255, 255), 75
+    titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 600), (255, 255, 255), 75
     title = Text(titlepos, f"A STORM ON A HOT DAY", fontsize=titlefontsize, fontcolor=titlecolor, bold=True)
+
+    stpos, stcolor, stfontsize = (width // 2, height // 2 - 350), (255, 255, 255), 150
+    st = Text(stpos, f"{results['status']}", fontsize=stfontsize, fontcolor=stcolor)
 
     pdpos, pdcolor, pdfontsize = (width // 2, height // 2 - 200), (255, 255, 255), 75
     pd = Text(pdpos, f"Planes destroyed: {results['Planes destroyed']}", fontsize=pdfontsize, fontcolor=pdcolor)
@@ -124,6 +136,10 @@ def load_results():
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
                   onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
+
+    retrycolor, retrysize, retrypos, retrytext = (128, 0, 0), (300, 100), (width - 175, height - 75), "RETRY"
+    retry = Button(*posf(retrypos, retrysize), *retrysize, color=retrycolor, buttonText=retrytext,
+                  onclickFunction=load_game, onclickParams={"era": era2, "level": level2}, onePress=True, fontsize=75, bold=True)
 
 
 def load_erachoice():
@@ -280,34 +296,46 @@ def pause_game():
                         onclickFunction=load_menu,
                         onePress=True, fontsize=75, bold=True)
     # exittomenu.update()
+    print(check_enemies())
 
 
 def continue_game():
     plane.sound.play(loops=-1)
     load_ingameui()
 
+
 def load_ingameui():
-    global menu, boolparams, in_game, params, plane, paused
-    paused = False
-    params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
-    in_game = True
+    if not check_enemies():
+        global menu, boolparams, in_game, params, plane, paused
+        paused = False
+        params = {"SPEED": round(plane.speed, 2), "THROTTLE": round(plane.throttle, 2), "ROCKETS": plane.rocketlimit, "BOMBS": plane.bomblimit, "AMMO": plane.bulletlimit, "HEALTH": round(plane.health, 2)}
+        in_game = True
 
-    menu = []
-    # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
-    # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
-    # title.update()
+        menu = []
+        # titlecolor, titlesize, titlepos, titletext = (128, 0, 0), (500, 200), (width // 2, 150), "VOLAR"
+        # title = Label(*posf(titlepos, titlesize), *titlesize, color=titlecolor, labelText=titletext)
+        # title.update()
 
-    menucolor, menusize, menupos, menutext = (128, 0, 0), (100, 100), (width - 75, 75), "II"
-    menubtn = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext,
+        menucolor, menusize, menupos, menutext = (128, 0, 0), (100, 100), (width - 75, 75), "II"
+        menubtn = Button(*posf(menupos, menusize), *menusize, color=menucolor, buttonText=menutext,
                      onclickFunction=pause_game, onePress=True, fontsize=75, bold=True)
-    # menubtn.update()
-    if boolparams:
-        x, y = width - 200, 0
-        prcolor, prfontsize, prh = (255, 255, 255), 40, 100
-        for i in params:
-            y += prh
-            # print(y)
-            Text((x, y), f"{i}: {params[i]}", fontsize=prfontsize, fontcolor=prcolor)
+        # menubtn.update()
+        if boolparams:
+            x, y = width - 200, 0
+            prcolor, prfontsize, prh = (255, 255, 255), 40, 100
+            for i in params:
+                y += prh
+                # print(y)
+                Text((x, y), f"{i}: {params[i]}", fontsize=prfontsize, fontcolor=prcolor)
+    else:
+        global results
+        results["status"] = "VICTORY!"
+        load_results()
+
+
+def check_enemies():
+    global enemies, targets
+    return not (enemies.sprites() and targets.sprites())
 
 
 class Button():
@@ -641,8 +669,6 @@ class Bomb(BasedMapObject):
                 t.health -= self.dmg
 
 
-
-
 class Rocket(BasedMapObject):
     def __init__(self, vector, pos, target, parent, damage=25):
         image = scale(load_image('missile.png'), 15, 73)
@@ -856,6 +882,8 @@ class Plane(pygame.sprite.Sprite):
     def update(self, *args, **kwargs):
         # print(self.health)
         if self.health <= 0:
+            global results
+            results["status"] = "DEFEAT"
             self.explosion()
         self.deltat = self.tick() / 1000
         self.t += self.deltat
@@ -927,6 +955,7 @@ class Plane(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, enemies):
             target = pygame.sprite.spritecollideany(self, enemies)
             if pygame.sprite.collide_mask(self, target):
+                results["status"] = "CRASHED"
                 self.explosion()
 
     def fire(self):
