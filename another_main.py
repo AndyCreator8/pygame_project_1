@@ -14,7 +14,8 @@ for monitor in screeninfo.get_monitors():
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
-in_game = Falseimport json
+in_game = False
+import json
 import math
 import os
 import random
