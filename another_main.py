@@ -89,14 +89,6 @@ def load_game(era, level, chosen_plane, chosen_map):
         "status": "DRAW"
     }
     era2, level2 = era, level
-    results = {
-        "Planes destroyed": 0,
-        "Ground targets destroyed": 0,
-        "Damage dealt": 0,
-        "Damage taken": 0,
-        "Time survived": 0,
-        "status": "DRAW"
-    }
     t = 0
     in_game = True
     paused = False
@@ -135,27 +127,29 @@ def load_game(era, level, chosen_plane, chosen_map):
 
 def load_results():
     global results, enemies, targets, plane, planes_sprites, all_sprites, in_game, t, width, height, paused, menu, era2, level2, player, radar, resultsloaded
+    if not in_game:
+        return None
     resultsloaded = True
+    menu = []
+    plane.mgsnd.stop()
+    plane.sound.stop()
+    in_game = False
+    paused = True
+    for i in enemies.sprites():
+        # print(i.dmgtkn, "shit")
+        results["Damage dealt"] += i.dmgtkn
+    for i in targets.sprites():
+        results["Damage dealt"] += i.dmgtkn
+    print("God damn", results["Damage dealt"])
+    results["Damage taken"] = plane.maxhealth - plane.health
+    results["Time survived"] = round(t, 2)
+
     all_sprites = pygame.sprite.Group()
     player = pygame.sprite.Group()
     targets = pygame.sprite.Group()
     planes_sprites = pygame.sprite.Group()
     radar = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
-    menu = []
-    plane.mgsnd.stop()
-    plane.sound.stop()
-    in_game = False
-    paused = True
-    dd = 0
-    for i in enemies.sprites():
-        print(i.dmgtkn)
-        dd += i.dmgtkn
-    for i in targets.sprites():
-        dd += i.dmgtkn
-    results["Damage dealt"] = dd
-    results["Damage taken"] = plane.maxhealth - plane.health
-    results["Time survived"] = round(t, 2)
 
     titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 600), (255, 255, 255), 75
     title = Text(titlepos, f"A STORM ON A HOT DAY", fontsize=titlefontsize, fontcolor=titlecolor, bold=True)
@@ -170,7 +164,7 @@ def load_results():
     gtd = Text(gtdpos, f"Ground targets destroyed: {results['Ground targets destroyed']}", fontsize=gtdfontsize, fontcolor=gtdcolor)
 
     ddpos, ddcolor, ddfontsize = (width // 2, height // 2), (255, 255, 255), 75
-    dd = Text(ddpos, f"Damage dealt: {dd}", fontsize=ddfontsize,
+    dd = Text(ddpos, f"Damage dealt: {results['Damage dealt']}", fontsize=ddfontsize,
                fontcolor=ddcolor)
 
     dtpos, dtcolor, dtfontsize = (width // 2, height // 2 + 100), (255, 255, 255), 75
@@ -264,6 +258,7 @@ def select_map(era, level, chosen_plane):
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
                   onclickFunction=load_era1lvls, onclickParams={"chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
 
 def select_plane_for_1_era():
     wait(0.125)
@@ -1534,9 +1529,11 @@ while running:
             # Maybe
             boolparams = True
         elif event.type == pygame.KEYUP and event.key == pygame.K_r and resultsloaded:
-            load_game(era2, level2, plane.name)
+            load_game(era2, level2, plane.name, map.name)
         elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and menuloaded:
             load_exitconfirmation()
+        elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and resultsloaded:
+            load_menu()
         elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
             print("tab changed")
             boolparams = not boolparams
