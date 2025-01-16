@@ -19,6 +19,7 @@ paused = True
 boolparams = True
 params = {}
 menu = []
+
 results = {
     "Planes destroyed": 0,
     "Ground targets destroyed": 0,
@@ -58,7 +59,7 @@ def wait(time):
     cl = pygame.time.wait(int(time * 1000))
 
 
-def load_game(era, level, chosen_plane):
+def load_game(era, level, chosen_plane, chosen_map):
     global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2
     era2, level2 = era, level
     t = 0
@@ -74,10 +75,16 @@ def load_game(era, level, chosen_plane):
     print(chosen_plane)
     enemytypes = [[], [4, 2, 7], [0, 5, 7], [1, 3]]
     plane = Plane(**chosen_plane)
-    map = Map()
+    map = Map(chosen_map)
+
+    for i in range(plane.bomblimit):
+        plane.bombs.append(Bomb())
+
+    for i in range(3):
+        Target()
     tcr = TargetCross()
-    target = Target()
     r = Radar(range=4000, rtspeed=3 + era)
+
     enemiesc = level
     enemyvars = enemytypes[era]
     print(enemyvars)
@@ -141,7 +148,7 @@ def load_results():
 
     retrycolor, retrysize, retrypos, retrytext = (128, 0, 0), (300, 100), (width - 175, height - 75), "RETRY"
     retry = Button(*posf(retrypos, retrysize), *retrysize, color=retrycolor, buttonText=retrytext,
-                  onclickFunction=load_game, onclickParams={"era": era2, "level": level2, "chosen_plane": plane.name}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era": era2, "level": level2, "chosen_plane": plane.name, "chosen_map": map.name}, onePress=True, fontsize=75, bold=True)
 
 
 def load_erachoice():
@@ -172,28 +179,51 @@ def load_era1lvls(chosen_plane):
     menu = []
     lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
     lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":1, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
     lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":1, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":1, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":1, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":1, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
                   onclickFunction=select_plane_for_1_era, onePress=True, fontsize=75, bold=True)
 
+
+def select_map(era, level, chosen_plane):
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 4, height // 4), "Syria"
+    title = Text((width // 2, height // 8), f"Chose map", fontsize=100, fontcolor=(255, 255, 255))
+    map_1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_game, onclickParams={"era":era, "level":level, "chosen_plane": chosen_plane, "chosen_map": lvl1text}, onePress=True,
+                     fontsize=75, bold=True, buttonImg=f'{lvl1text}.jpg')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] + 100, height // 4), "Poland"
+    map_2 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_game, onclickParams={"era":era, "level":level, "chosen_plane": chosen_plane, "chosen_map": lvl1text}, onePress=True,
+                     fontsize=75,
+                     bold=True, buttonImg=f'{lvl1text}.jpg')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] * 2 + 200, height // 4), "Carpathians"
+    map_3 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_game, onclickParams={"era":era, "level":level, "chosen_plane": chosen_plane, "chosen_map": lvl1text}, onePress=True,
+                     fontsize=75,
+                     bold=True, buttonImg=f'{lvl1text}.jpg')
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_era1lvls, onclickParams={"chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
 def select_plane_for_1_era():
     wait(0.125)
@@ -267,23 +297,23 @@ def load_era2lvls(chosen_plane):
     menu = []
     lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
     lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":2, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
     lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":2, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":2, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":2, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":2, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
@@ -296,23 +326,23 @@ def load_era3lvls(chosen_plane):
     menu = []
     lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
     lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":3, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
     lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":3, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":3, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":3, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_map, onclickParams={"era":3, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
@@ -672,10 +702,11 @@ class BasedMapObject(pygame.sprite.Sprite):
 
 
 class Map(BasedMapObject):
-    mapim = scale(load_image("map2.jpg"), *map_size)
 
-    def __init__(self):
-        super().__init__(Map.mapim, Vector(), center)
+    def __init__(self, name):
+        self.mapim = scale(load_image(f"{name}.jpg"), *map_size)
+        self.name = name
+        super().__init__(self.mapim, Vector(), center)
 
 
 class Bomb(BasedMapObject):
@@ -693,10 +724,8 @@ class Bomb(BasedMapObject):
         self.bomb = scale(rotate(load_image("bomb.png"), 225), self.bombsize, self.bombsize)
         self.boom = scale(load_image("boom.png"), self.boomsize, self.boomsize)
         self.crater = scale(load_image("crater.webp"), self.cratersize, self.cratersize)
-        super().__init__(self.bomb, plane.vector * 0.2, center)
         self.snd = pygame.mixer.Sound("sounds/bombsnd.wav")
         self.snd.set_volume(0.1)
-        self.snd.play()
         self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
         self.explotionsnd.set_volume(0.4)
         self.explosion_imgs = []
@@ -708,44 +737,52 @@ class Bomb(BasedMapObject):
                 scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.boomsize,
                       self.boomsize))
         # self.image = rotate(self.image, (plane.vector.angle + 270) % 360)
-        self.rect = self.image.get_rect()
-        self.rect.move(*self.realv.get_int_xy())
-        self.rect.x, self.rect.y = posf(self.pos, self.size)
         self.size = (self.bombsize, self.bombsize)
         self.explosion_sc = 0
         self.flytime = 3
         self.expltime = 2
+        self.activated = False
+        self.deactivated = True
         self.status = "bomb"
 
+    def activate(self):
+        super().__init__(self.bomb, plane.vector * 0.2, center)
+        self.rect = self.image.get_rect()
+        self.rect.move(*self.realv.get_int_xy())
+        self.rect.x, self.rect.y = posf(self.pos, self.size)
+        self.snd.play()
+        self.deactivated = False
+
     def update(self, *args):
-        super().update()
-        # print(self.t)
-        # print(self.flytime + self.expltime)
-        if self.t < self.flytime:
-            self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 400)))
-            self.size = (self.bombsize, self.bombsize)
-            self.image = scale(self.bomb, *self.size)
-            self.image = rotate(self.image, self.v.angle - 90)
-        elif self.t >= self.flytime and self.status == "bomb":
-            self.v = Vector()
-            prev_rect = self.rect.center
-            self.explotionsnd.play()
-            self.image = self.explosion_imgs[self.explosion_sc]
-            self.rect = self.image.get_rect()
-            self.rect.center = prev_rect
-            self.explosion_sc += 1
-            self.size = (self.boomsize, self.boomsize)
-            if self.explosion_sc == 10:
-                self.status = "boom"
-        elif self.t >= self.flytime + self.expltime and self.status == "boom":
-            self.status = "crater"
-            self.image = self.crater
-            self.size = (self.cratersize, self.cratersize)
-            self.snd.stop()
-        if pygame.sprite.spritecollideany(self, targets) and self.status == "boom":
-            t = pygame.sprite.spritecollideany(self, targets)
-            if pygame.sprite.collide_mask(self, t):
-                t.health -= self.dmg
+        if self.activated:
+            # print(self.t)
+            # print(self.flytime + self.expltime)
+            if self.t < self.flytime:
+                self.bombsize = int(self.bombsize * (1 - self.t / (self.flytime * 400)))
+                self.size = (self.bombsize, self.bombsize)
+                self.image = scale(self.bomb, *self.size)
+                self.image = rotate(self.image, self.v.angle - 90)
+            elif self.t >= self.flytime and self.status == "bomb":
+                self.v = Vector()
+                prev_rect = self.rect.center
+                self.explotionsnd.play()
+                self.image = self.explosion_imgs[self.explosion_sc]
+                self.rect = self.image.get_rect()
+                self.rect.center = prev_rect
+                self.explosion_sc += 1
+                self.size = (self.boomsize, self.boomsize)
+                if self.explosion_sc == 10:
+                    self.status = "boom"
+            elif self.t >= self.flytime + self.expltime and self.status == "boom":
+                self.status = "crater"
+                self.image = self.crater
+                self.size = (self.cratersize, self.cratersize)
+                self.snd.stop()
+            if pygame.sprite.spritecollideany(self, targets) and self.status == "boom":
+                t = pygame.sprite.spritecollideany(self, targets)
+                if pygame.sprite.collide_mask(self, t):
+                    t.health -= self.dmg
+            super().update()
 
 
 class Rocket(BasedMapObject):
@@ -838,7 +875,7 @@ class Bullet(BasedMapObject):
     def __init__(self, vector, pos, damage=0.1, spread=4):
         # self.add(bullets)
         super().__init__(Bullet.image, vector, pos)
-        self.image.fill('black')
+        self.image.fill('white')
         self.orig = self.image
         self.rect = self.image.get_rect()
         self.size = self.image.get_size()
@@ -906,6 +943,7 @@ class Plane(pygame.sprite.Sprite):
         self.sound.set_volume(0.2)
         self.sound.play(loops=-1)
         self.name = name
+        self.bombs = []
 
         self.explosion_imgs = []
         self.image = load_image('0.png', f'data/{name}', -1)
@@ -1018,7 +1056,10 @@ class Plane(pygame.sprite.Sprite):
         if key[pygame.K_SPACE] and self.bombenabled and self.bomblimit > 0:
             self.bombing = True
             self.bombt = self.t
-            Bomb(int(self.bombdmg))
+            self.bombs[0].activated = True
+            if self.bombs[0].deactivated:
+                self.bombs[0].activate()
+            del self.bombs[0]
             if not self.spamenabled:
                 self.bombenabled = False
                 self.bomblimit -= 1
@@ -1306,16 +1347,16 @@ class Enemy(BasedMapObject):
 
 
 class Target(BasedMapObject):
-    image = scale(load_image('Targets/plank.jpeg'), 100, 100)
-    images = [scale(load_image('Targets/plank.jpeg'), 100, 100)]
+    image = scale(load_image('Targets/взлетная полоса.png'), 700, 200)
 
     def __init__(self):
         arr = [i.pos for i in targets.sprites()]
-        x, y = random.randint(0, width), random.randint(0, height)
+        x, y = random.randint(-map_size[0] // 2 + 1000, map_size[0] // 2 - 1000), random.randint(-map_size[1] // 2 + 1000, map_size[1] // 2 - 1000)
         while (x, y) in arr:
-            x, y = random.randint(0, width), random.randint(0, height)
+            x, y = random.randint(-map_size[0] // 2 + 1000, map_size[0] // 2 - 1000), random.randint(-map_size[1] // 2 + 1000, map_size[1] // 2 - 1000)
+        self.caught = False
         self.pos = (x, y)
-        super().__init__(random.choice(Target.images), Vector(), self.pos)
+        super().__init__(Target.image, Vector(), self.pos)
         self.add(targets)
         self.health = self.maxhealth = 400
         self.dmgtkn = 0
@@ -1329,6 +1370,16 @@ class Target(BasedMapObject):
             plane.bulletlimit += 600
             self.kill()
         super().update()
+
+    def get_vector_from_plane(self):
+        x, y = self.centerpos[0] - center[0], self.centerpos[1] - center[1]
+        s = (x ** 2 + y ** 2) ** 0.5
+        if not s:
+            return Vector()
+        angle = degrees(acos(x / s))
+        if y > 0:
+            angle = 360 - angle
+        return Vector(s, angle)
 
 
 class Radar(pygame.sprite.Sprite):
@@ -1364,8 +1415,18 @@ class Radar(pygame.sprite.Sprite):
                 posx = self.rect.centerx + (s.vx / self.range * self.r)
                 posy = self.rect.centery - (s.vy / self.range * self.r)
                 enemy.caught = True
-                self.caught.append([posx, posy, self.angle, enemy])
+                self.caught.append([posx, posy, self.angle, enemy, 'enemy'])
                 pygame.draw.circle(screen, (0, 255, 0), (posx, posy), 5)
+        for enemy in targets.sprites():
+            s = enemy.get_vector_from_plane()
+            # print(int(s.angle), self.angle)
+            if s.value < self.range and int(s.angle) - int(s.angle) % self.rtspeed == 360 - self.angle and not enemy.caught:
+                posx = self.rect.centerx + (s.vx / self.range * self.r)
+                posy = self.rect.centery - (s.vy / self.range * self.r)
+                enemy.caught = True
+                self.caught.append([posx, posy, self.angle, enemy, 'target'])
+                pygame.draw.polygon(screen, (0, 255, 0), (
+                    (posx - 3, posy + 4), (posx + 4, posy + 4), (posx + 4, posy - 4), (posx - 4, posy - 4)))
 
     def redraw(self):
         newarr = []
@@ -1374,7 +1435,12 @@ class Radar(pygame.sprite.Sprite):
                 self.caught[i][3].caught = False
             else:
                 newarr.append(self.caught[i])
-                pygame.draw.circle(screen, (0, 255, 0), tuple(self.caught[i][:2]), 5)
+                posx, posy =  tuple(self.caught[i][:2])
+                if self.caught[i][4] == 'enemy':
+                    pygame.draw.circle(screen, (0, 255, 0), (posx, posy), 5)
+                else:
+                    pygame.draw.polygon(screen, (0, 255, 0), (
+                        (posx - 3, posy + 4), (posx + 4, posy + 4), (posx + 4, posy - 4), (posx - 4, posy - 4)))
         self.caught = newarr
 
 
