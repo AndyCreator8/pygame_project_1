@@ -58,7 +58,7 @@ def wait(time):
     cl = pygame.time.wait(int(time * 1000))
 
 
-def load_game(era, level):
+def load_game(era, level, chosen_plane):
     global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2
     era2, level2 = era, level
     t = 0
@@ -70,7 +70,7 @@ def load_game(era, level):
         i = 0, 5, 7
     else:
         i = 3, 1
-    chosen_plane = planes[list(planes.keys())[random.choice(i)]]
+    chosen_plane = planes[chosen_plane]
     print(chosen_plane)
     enemytypes = [[], [4, 2, 7], [0, 5, 7], [1, 3]]
     plane = Plane(**chosen_plane)
@@ -99,6 +99,8 @@ def load_results():
     radar = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
     menu = []
+    plane.mgsnd.stop()
+    plane.sound.stop()
     if not in_game:
         return None
     paused = True
@@ -139,7 +141,7 @@ def load_results():
 
     retrycolor, retrysize, retrypos, retrytext = (128, 0, 0), (300, 100), (width - 175, height - 75), "RETRY"
     retry = Button(*posf(retrypos, retrysize), *retrysize, color=retrycolor, buttonText=retrytext,
-                  onclickFunction=load_game, onclickParams={"era": era2, "level": level2}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era": era2, "level": level2, "chosen_plane": plane.name}, onePress=True, fontsize=75, bold=True)
 
 
 def load_erachoice():
@@ -148,106 +150,173 @@ def load_erachoice():
     menu = []
     era1color, era1size, era1pos, era1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "WW1"
     era1 = Button(*posf(era1pos, era1size), *era1size, color=era1color, buttonText=era1text,
-                  onclickFunction=load_era1lvls, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_plane_for_1_era, onePress=True, fontsize=75, bold=True)
 
     era2color, era2size, era2pos, era2text = (128, 0, 0), (400, 100), (width // 2, height // 2), "WW2"
     era2 = Button(*posf(era2pos, era2size), *era2size, color=era2color, buttonText=era2text,
-                  onclickFunction=load_era2lvls, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_plane_for_2_era, onePress=True, fontsize=75, bold=True)
 
     era3color, era3size, era3pos, era3text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "COLD WAR"
     era3 = Button(*posf(era3pos, era3size), *era3size, color=era3color, buttonText=era3text,
-                  onclickFunction=load_era3lvls, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_plane_for_3_era, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
                   onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
 
 
-def load_era1lvls():
+def load_era1lvls(chosen_plane):
+    wait(0.125)
+    global menu
+    chosen_plane = chosen_plane
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":1, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=select_plane_for_1_era, onePress=True, fontsize=75, bold=True)
+
+
+def select_plane_for_1_era():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 4, height // 4), "I-16"
+    title = Text((width // 2, height // 8), f"Chose plane", fontsize=100, fontcolor=(255, 255, 255))
+    plane_1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_era1lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75, bold=True, buttonImg='I-16/0.png')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] + 100, height // 4), "I-153"
+    plane_2 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_era1lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75,
+                     bold=True, buttonImg='I-153/0.png')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] * 2 + 200, height // 4), "Hurricane"
+    plane_3 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_era1lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75,
+                     bold=True, buttonImg='Hurricane/0.png')
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+    # *posf(era2pos, era2size), *era2size, color = era2color, buttonText = era2text,
+    # onclickFunction = load_era2lvls, onePress = True, fontsize = 75, bold = True
+
+def select_plane_for_2_era():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 4, height // 4), "Bf 109"
+    title = Text((width // 2, height // 8), f"Chose plane", fontsize=100, fontcolor=(255, 255, 255))
+    plane_1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_era2lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75, bold=True, buttonImg=f'{lvl1text}/0.png')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] + 100, height // 4), "Spitfire"
+    plane_2 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_era2lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75,
+                     bold=True, buttonImg=f'{lvl1text}/0.png')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] * 2 + 200, height // 4), "Ki-43"
+    plane_3 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_era2lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75,
+                     bold=True, buttonImg=f'{lvl1text}/0.png')
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+    # *posf(era2pos, era2size), *era2size, color = era2color, buttonText = era2text,
+    # onclickFunction = load_era2lvls, onePress = True, fontsize = 75, bold = True
+
+
+def select_plane_for_3_era():
+    wait(0.125)
+    global menu
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 4, height // 4), "F-86"
+    title = Text((width // 2, height // 8), f"Chose plane", fontsize=100, fontcolor=(255, 255, 255))
+    plane_1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_era3lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75, bold=True, buttonImg=f'{lvl1text}/0.png')
+    lvl1pos, lvl1text = (width // 4 + lvl1size[0] + 100, height // 4), "Me 163"
+    plane_2 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                     onclickFunction=load_era3lvls, onclickParams={"chosen_plane": lvl1text}, onePress=True, fontsize=75,
+                     bold=True, buttonImg=f'{lvl1text}/0.png')
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+    # *posf(era2pos, era2size), *era2size, color = era2color, buttonText = era2text,
+    # onclickFunction = load_era2lvls, onePress = True, fontsize = 75, bold = True
+
+
+
+def load_era2lvls(chosen_plane):
+    wait(0.125)
+    global menu
+
+    menu = []
+    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
+    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
+    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
+    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
+    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
+    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
+                  onclickFunction=load_game, onclickParams={"era":2, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
+
+    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
+    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
+                  onclickFunction=select_plane_for_2_era, onePress=True, fontsize=75, bold=True)
+
+
+def load_era3lvls(chosen_plane):
     wait(0.125)
     global menu
     menu = []
     lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
     lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":1}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era":3, "level":1, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
     lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":2}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era":3, "level":2, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
     lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":3}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era":3, "level":3, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
     lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":4}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era":3, "level":4, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
     lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":1, "level":5}, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_game, onclickParams={"era":3, "level":5, "chosen_plane": chosen_plane}, onePress=True, fontsize=75, bold=True)
 
     backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
     back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
-                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
-
-
-def load_era2lvls():
-    wait(0.125)
-    global menu
-    menu = []
-    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
-    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":1}, onePress=True, fontsize=75, bold=True)
-
-    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
-    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":2}, onePress=True, fontsize=75, bold=True)
-
-    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
-    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":3}, onePress=True, fontsize=75, bold=True)
-
-    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
-    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":4}, onePress=True, fontsize=75, bold=True)
-
-    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
-    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":2, "level":5}, onePress=True, fontsize=75, bold=True)
-
-    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
-    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
-                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
-
-
-def load_era3lvls():
-    wait(0.125)
-    global menu
-    menu = []
-    lvl1color, lvl1size, lvl1pos, lvl1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 240), "LEVEL I"
-    lvl1 = Button(*posf(lvl1pos, lvl1size), *lvl1size, color=lvl1color, buttonText=lvl1text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":1}, onePress=True, fontsize=75, bold=True)
-
-    lvl2color, lvl2size, lvl2pos, lvl2text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "LEVEL II"
-    lvl2 = Button(*posf(lvl2pos, lvl2size), *lvl2size, color=lvl2color, buttonText=lvl2text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":2}, onePress=True, fontsize=75, bold=True)
-
-    lvl3color, lvl3size, lvl3pos, lvl3text = (128, 0, 0), (400, 100), (width // 2, height // 2), "LEVEL III"
-    lvl3 = Button(*posf(lvl3pos, lvl3size), *lvl3size, color=lvl3color, buttonText=lvl3text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":3}, onePress=True, fontsize=75, bold=True)
-
-    lvl4color, lvl4size, lvl4pos, lvl4text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 120), "LEVEL IV"
-    lvl4 = Button(*posf(lvl4pos, lvl4size), *lvl4size, color=lvl4color, buttonText=lvl4text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":4}, onePress=True, fontsize=75, bold=True)
-
-    lvl5color, lvl5size, lvl5pos, lvl5text = (128, 0, 0), (400, 100), (width // 2, height // 2 + 240), "LEVEL V"
-    lvl5 = Button(*posf(lvl5pos, lvl5size), *lvl5size, color=lvl5color, buttonText=lvl5text,
-                  onclickFunction=load_game, onclickParams={"era":3, "level":5}, onePress=True, fontsize=75, bold=True)
-
-    backcolor, backsize, backpos, backtext = (128, 0, 0), (300, 100), (175, height - 75), "BACK"
-    back = Button(*posf(backpos, backsize), *backsize, color=backcolor, buttonText=backtext,
-                  onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=select_plane_for_3_era, onePress=True, fontsize=75, bold=True)
 
 
 def posf(targetpos, size):
@@ -335,14 +404,15 @@ def load_ingameui():
 
 def check_enemies():
     global enemies, targets
-    return not (enemies.sprites() and targets.sprites())
+    return not (enemies.sprites() or targets.sprites())
 
 
 class Button():
     def __init__(self, x, y, width, height, color, buttonText='Button', onclickFunction=None, onePress=False,
-                 onclickParams=0, fontsize=30, bold=False, fontname="Arial"):
+                 onclickParams=0, fontsize=30, bold=False, fontname="Arial", buttonImg=None):
         self.bold = bold
         self.font = pygame.font.SysFont(fontname, fontsize, bold=self.bold)
+        self.image = None
         self.x = x
         self.y = y
         self.dw = 5
@@ -366,6 +436,11 @@ class Button():
         }
         self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
         self.buttonRect = pygame.Rect(self.x, self.y, self.bwidth, self.bheight)
+        if buttonImg:
+            self.image = scale(load_image(buttonImg), self.bwidth, 300)
+            self.img_rect = self.image.get_rect()
+            self.img_rect.x = self.x
+            self.img_rect.y = self.y + self.bheight
 
         self.buttonSurf = self.font.render(buttonText, True, (20, 20, 20))
         menu.append(self)
@@ -412,6 +487,10 @@ class Button():
             self.buttonRect.width / 2 - self.buttonSurf.get_rect().width / 2,
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
         ])
+
+        if self.image:
+            screen.blit(self.image, self.img_rect)
+
         screen.blit(self.buttonSurface, self.buttonRect)
 
     def updatetext(self, newtext):
@@ -593,7 +672,7 @@ class BasedMapObject(pygame.sprite.Sprite):
 
 
 class Map(BasedMapObject):
-    mapim = scale(load_image("map.jpg"), *map_size)
+    mapim = scale(load_image("map2.jpg"), *map_size)
 
     def __init__(self):
         super().__init__(Map.mapim, Vector(), center)
@@ -813,7 +892,7 @@ class Bullet(BasedMapObject):
 
 class Plane(pygame.sprite.Sprite):
     def __init__(self, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
-                 max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage):
+                 max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage, spread, guns):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
 
@@ -826,6 +905,7 @@ class Plane(pygame.sprite.Sprite):
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
         self.sound.play(loops=-1)
+        self.name = name
 
         self.explosion_imgs = []
         self.image = load_image('0.png', f'data/{name}', -1)
@@ -862,6 +942,8 @@ class Plane(pygame.sprite.Sprite):
         self.bombdmg = bomb_damage
         self.bombfr = 0.25
         self.crosst = 0.05
+        self.spread = spread
+        self.guns = guns
 
         self.t = 0
         self.clock = pygame.time.Clock()
@@ -967,13 +1049,19 @@ class Plane(pygame.sprite.Sprite):
     def fire(self):
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
             angle_rad = math.radians(-self.vector.angle - 90)
-            new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-            new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-            Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
-            new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-            new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-            Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg)
-            self.bulletlimit -= 2
+            if self.guns == 1:
+                new_x = self.rect.centerx + (math.cos(angle_rad)) - (100 * math.sin(angle_rad))
+                new_y = self.rect.centery + (math.sin(angle_rad)) + (100 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg, self.spread)
+                self.bulletlimit -= 1
+            else:
+                new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+                new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg, self.spread)
+                new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+                new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.vector.angle), (new_x, new_y), self.blltdmg, self.spread)
+                self.bulletlimit -= 2
             self.prev_bullet_t = self.t
 
     def closest(self):
@@ -1028,7 +1116,7 @@ class Enemy(BasedMapObject):
     image = load_image('0.png', 'data/Me 163', -1)
 
     def __init__(self, angle, pos, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
-                 max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage=0):
+                 max_bombs, bullet_speed, bullet_damage, rocket_damage, spread, guns, bomb_damage=0):
         super().__init__(Enemy.image, Vector(max_speed, angle), pos)
         self.add(enemies, planes_sprites)
         self.rect = self.image.get_rect()
@@ -1069,6 +1157,8 @@ class Enemy(BasedMapObject):
         self.maxspeed = max_speed
         self.mobility = mobility
         self.status = None
+        self.spread = spread
+        self.guns = guns
 
     def update(self):
         self.dmgtkn = self.maxhealth - self.health
@@ -1168,14 +1258,21 @@ class Enemy(BasedMapObject):
         return ans
 
     def shoot(self):
-        if self.t - self.prev_bullet_t >= 0.15:
+        if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
             angle_rad = math.radians(-self.v.angle - 90)
-            new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-            new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-            Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg)
-            new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
-            new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
-            Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg)
+            if self.guns == 1:
+                new_x = self.rect.centerx + (math.cos(angle_rad)) - (math.sin(angle_rad))
+                new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg, self.spread)
+                self.bulletlimit -= 1
+            else:
+                new_x = self.rect.centerx + (50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+                new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg, self.spread)
+                new_x = self.rect.centerx + (-50 * math.cos(angle_rad)) - (50 * math.sin(angle_rad))
+                new_y = self.rect.centery + (-50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg, self.spread)
+                self.bulletlimit -= 2
             self.prev_bullet_t = self.t
 
     def explosion(self):

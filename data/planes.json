@@ -27,7 +27,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "I-153": {
     "name": "I-153",
@@ -57,7 +59,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "I-16": {
     "name": "I-16",
