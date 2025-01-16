@@ -482,7 +482,7 @@ class BasedMapObject(pygame.sprite.Sprite):
 
 
 class Map(BasedMapObject):
-    mapim = scale(load_image("map.jpg"), *map_size)
+    mapim = scale(load_image("Syria.jpg"), *map_size)
 
     def __init__(self):
         super().__init__(Map.mapim, Vector(), center)
