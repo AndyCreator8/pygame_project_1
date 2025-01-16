@@ -16,7 +16,9 @@ center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
 in_game = False
 paused = True
+resultsloaded = False
 boolparams = True
+menuloaded = True
 params = {}
 menu = []
 
@@ -59,8 +61,33 @@ def wait(time):
     cl = pygame.time.wait(int(time * 1000))
 
 
+def load_exitconfirmation():
+    wait(0.125)
+    global menu
+    menu = []
+
+    titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 300), (255, 255, 255), 75
+    title = Text(titlepos, f"ARE YOU SURE YOU WANT TO EXIT?", fontsize=titlefontsize, fontcolor=titlecolor, bold=True)
+
+    playcolor, playsize, playpos, playtext = (128, 0, 0), (350, 200), (width // 2, height // 2 - 110), "NO"
+    play = Button(*posf(playpos, playsize), *playsize, color=playcolor, buttonText=playtext,
+                  onclickFunction=load_menu, onePress=True, fontsize=75, bold=True)
+    exitcolor, exitsize, exitpos, exittext = (128, 0, 0), (350, 200), (width // 2, height // 2 + 110), "YES"
+    exit = Button(*posf(exitpos, exitsize), *exitsize, color=exitcolor, buttonText=exittext,
+                  onclickFunction=stop_game, onePress=True, fontsize=75, bold=True)
+
+
 def load_game(era, level, chosen_plane, chosen_map):
-    global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2, results
+    global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2, results, resultsloaded
+    resultsloaded = False
+    results = {
+        "Planes destroyed": 0,
+        "Ground targets destroyed": 0,
+        "Damage dealt": 0,
+        "Damage taken": 0,
+        "Time survived": 0,
+        "status": "DRAW"
+    }
     era2, level2 = era, level
     results = {
         "Planes destroyed": 0,
@@ -91,6 +118,7 @@ def load_game(era, level, chosen_plane, chosen_map):
     for i in range(3):
         Target()
     tcr = TargetCross()
+    target = Target()
     r = Radar(range=4000, rtspeed=3 + era)
 
     enemiesc = level
@@ -106,7 +134,8 @@ def load_game(era, level, chosen_plane, chosen_map):
 
 
 def load_results():
-    global results, enemies, targets, plane, planes_sprites, all_sprites, in_game, t, width, height, paused, menu, era2, level2, player, radar
+    global results, enemies, targets, plane, planes_sprites, all_sprites, in_game, t, width, height, paused, menu, era2, level2, player, radar, resultsloaded
+    resultsloaded = True
     all_sprites = pygame.sprite.Group()
     player = pygame.sprite.Group()
     targets = pygame.sprite.Group()
@@ -141,7 +170,7 @@ def load_results():
     gtd = Text(gtdpos, f"Ground targets destroyed: {results['Ground targets destroyed']}", fontsize=gtdfontsize, fontcolor=gtdcolor)
 
     ddpos, ddcolor, ddfontsize = (width // 2, height // 2), (255, 255, 255), 75
-    dd = Text(ddpos, f"Damage dealt: {results['Damage dealt']}", fontsize=ddfontsize,
+    dd = Text(ddpos, f"Damage dealt: {dd}", fontsize=ddfontsize,
                fontcolor=ddcolor)
 
     dtpos, dtcolor, dtfontsize = (width // 2, height // 2 + 100), (255, 255, 255), 75
@@ -163,7 +192,8 @@ def load_results():
 
 def load_erachoice():
     wait(0.125)
-    global menu
+    global menu, menuloaded
+    menuloaded = False
     menu = []
     era1color, era1size, era1pos, era1text = (128, 0, 0), (400, 100), (width // 2, height // 2 - 120), "WW1"
     era1 = Button(*posf(era1pos, era1size), *era1size, color=era1color, buttonText=era1text,
@@ -256,6 +286,7 @@ def select_plane_for_1_era():
                   onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
     # *posf(era2pos, era2size), *era2size, color = era2color, buttonText = era2text,
     # onclickFunction = load_era2lvls, onePress = True, fontsize = 75, bold = True
+
 
 def select_plane_for_2_era():
     wait(0.125)
@@ -365,7 +396,10 @@ def posf(targetpos, size):
 
 def load_menu():
     wait(0.125)
-    global menu, in_game, all_sprites, horizontal_borders, vertical_borders, player, targets, planes_sprites, radar, enemies
+    global menu, in_game, all_sprites, horizontal_borders, vertical_borders, player, targets, planes_sprites, radar, enemies, resultsloaded, menuloaded
+
+    menuloaded = True
+    resultsloaded = False
 
     all_sprites = pygame.sprite.Group()
     horizontal_borders = pygame.sprite.Group()
@@ -378,12 +412,21 @@ def load_menu():
 
     in_game = False
     menu = []
+
+    titlepos, titlecolor, titlefontsize = (width // 2, height // 2 - 375), (255, 255, 255), 125
+    title = Text(titlepos, f"A STORM ON A HOT DAY", fontsize=titlefontsize, fontcolor=titlecolor, bold=True)
+
     playcolor, playsize, playpos, playtext = (128, 0, 0), (500, 200), (width // 2, height // 2 - 110), "PLAY"
     play = Button(*posf(playpos, playsize), *playsize, color=playcolor, buttonText=playtext,
                   onclickFunction=load_erachoice, onePress=True, fontsize=75, bold=True)
     exitcolor, exitsize, exitpos, exittext = (128, 0, 0), (500, 200), (width // 2, height // 2 + 110), "EXIT"
     exit = Button(*posf(exitpos, exitsize), *exitsize, color=exitcolor, buttonText=exittext,
-                  onclickFunction=pygame.quit, onePress=True, fontsize=75, bold=True)
+                  onclickFunction=load_exitconfirmation, onePress=True, fontsize=75, bold=True)
+
+
+def stop_game():
+    pygame.quit()
+    sys.exit()
 
 
 def pause_game():
@@ -1479,7 +1522,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE and in_game:
+        if event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and in_game:
             if paused:
                 plane.sound.play()
                 load_ingameui()
@@ -1490,6 +1533,10 @@ while running:
             # paused = not paused
             # Maybe
             boolparams = True
+        elif event.type == pygame.KEYUP and event.key == pygame.K_r and resultsloaded:
+            load_game(era2, level2, plane.name)
+        elif event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE and menuloaded:
+            load_exitconfirmation()
         elif event.type == pygame.KEYUP and event.key == pygame.K_TAB:
             print("tab changed")
             boolparams = not boolparams
