@@ -60,8 +60,16 @@ def wait(time):
 
 
 def load_game(era, level, chosen_plane, chosen_map):
-    global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2
+    global planes, map, tcr, target, r, plane, in_game, paused, t, era2, level2, results
     era2, level2 = era, level
+    results = {
+        "Planes destroyed": 0,
+        "Ground targets destroyed": 0,
+        "Damage dealt": 0,
+        "Damage taken": 0,
+        "Time survived": 0,
+        "status": "DRAW"
+    }
     t = 0
     in_game = True
     paused = False
@@ -108,13 +116,15 @@ def load_results():
     menu = []
     plane.mgsnd.stop()
     plane.sound.stop()
-    if not in_game:
-        return None
+    in_game = False
     paused = True
+    dd = 0
     for i in enemies.sprites():
-        results["Damage dealt"] += i.dmgtkn
+        print(i.dmgtkn)
+        dd += i.dmgtkn
     for i in targets.sprites():
-        results["Damage dealt"] += i.dmgtkn
+        dd += i.dmgtkn
+    results["Damage dealt"] = dd
     results["Damage taken"] = plane.maxhealth - plane.health
     results["Time survived"] = round(t, 2)
 

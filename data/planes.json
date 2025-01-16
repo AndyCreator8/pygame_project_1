@@ -12,7 +12,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Me 163": {
     "name": "Me 163",
@@ -30,6 +32,7 @@
     "bomb_damage": 200,
     "spread": 2,
     "guns": 1
+
   },
   "I-153": {
     "name": "I-153",
@@ -44,7 +47,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "F-86": {
     "name": "F-86",
@@ -76,7 +81,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Spitfire": {
     "name": "Spitfire",
@@ -91,7 +98,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Ki-43": {
     "name": "Ki-43",
@@ -106,7 +115,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Hurricane": {
     "name": "Hurricane",
@@ -121,6 +132,8 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   }
 }
