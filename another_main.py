@@ -578,7 +578,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(120)
+        self.tick = lambda: self.clock.tick(60)
 
     def update(self, *args):
         self.realv = self.v - plane.vector
@@ -816,11 +816,17 @@ class Plane(pygame.sprite.Sprite):
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
-        self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.wav")
+
+
+        if name == 'F-86' or name == 'Me 163':
+            self.mgsnd = pygame.mixer.Sound("sounds/a10a-brrt-original-—-сделано-в-Clipchamp.mp3")
+        else:
+            self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.mp3")
         self.mgsnd.set_volume(0.5)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
         self.sound.play(loops=-1)
+
         self.explosion_imgs = []
         self.image = load_image('0.png', f'data/{name}', -1)
         for i in range(0, 5):
@@ -860,7 +866,7 @@ class Plane(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(120)
+        self.tick = lambda: self.clock.tick(60)
         self.deltat = 0
 
         self.rect = self.image.get_rect()
@@ -1319,7 +1325,7 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT and paused is False:
                 print('a')
                 firing = True
-                plane.mgsnd.play()
+                plane.mgsnd.play(loops=-1)
             elif event.type == pygame.MOUSEBUTTONUP:
                 plane.mgsnd.stop()
                 firing = False
@@ -1341,5 +1347,5 @@ while running:
         object.update()
     pygame.display.flip()
     if not paused:
-        t += clock.tick(60) / 1000
+        t += clock.tick(30) / 1000
 pygame.quit()
