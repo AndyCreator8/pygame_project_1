@@ -531,7 +531,7 @@ class Button():
         self.buttonSurface = pygame.Surface((self.bwidth, self.bheight))
         self.buttonRect = pygame.Rect(self.x, self.y, self.bwidth, self.bheight)
         if buttonImg:
-            self.image = scale(load_image(buttonImg, colorkey=-1), self.bwidth, 300)
+            self.image = scale(load_image(buttonImg), self.bwidth, 300)
             self.img_rect = self.image.get_rect()
             self.img_rect.x = self.x
             self.img_rect.y = self.y + self.bheight
@@ -1432,7 +1432,6 @@ class Target(BasedMapObject):
             results["Ground targets destroyed"] += 1
             plane.rocketlimit += 5
             plane.bulletlimit += 600
-            plane.health += 20
             self.kill()
         super().update()
 
@@ -1570,6 +1569,7 @@ while running:
             plane.fire()
 
     screen.fill((0, 0, 0))
+    print('a')
     all_sprites.draw(screen)
     player.draw(screen)
     if paused is False:
