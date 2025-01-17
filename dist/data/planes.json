@@ -7,12 +7,14 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 0,
-    "max_rockets": 4,
+    "max_rockets": 5,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Me 163": {
     "name": "Me 163",
@@ -22,12 +24,15 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 1,
-    "max_rockets": 4,
+    "max_rockets": 15,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
+
   },
   "I-153": {
     "name": "I-153",
@@ -37,12 +42,14 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 0,
-    "max_rockets": 4,
+    "max_rockets": 0,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "F-86": {
     "name": "F-86",
@@ -52,12 +59,14 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 1,
-    "max_rockets": 4,
+    "max_rockets": 15,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "I-16": {
     "name": "I-16",
@@ -72,7 +81,9 @@
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Spitfire": {
     "name": "Spitfire",
@@ -82,12 +93,14 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 0,
-    "max_rockets": 0,
+    "max_rockets": 9999,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Ki-43": {
     "name": "Ki-43",
@@ -97,12 +110,14 @@
     "mobility": 3,
     "max_bullets": 2000,
     "rockets": 0,
-    "max_rockets": 0,
+    "max_rockets": 5,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   },
   "Hurricane": {
     "name": "Hurricane",
@@ -112,11 +127,13 @@
     "mobility": 2,
     "max_bullets": 2000,
     "rockets": 0,
-    "max_rockets": 0,
+    "max_rockets": 5,
     "max_bombs": 5,
     "bullet_speed": 50,
     "bullet_damage": 0.5,
     "rocket_damage": 15,
-    "bomb_damage": 200
+    "bomb_damage": 200,
+    "spread": 2,
+    "guns": 1
   }
 }

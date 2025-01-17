@@ -123,7 +123,6 @@ def load_game(era, level, chosen_plane, chosen_map):
 
     for i in range(plane.bomblimit):
         plane.bombs.append(Bomb())
-
     for i in range(3):
         Target()
     tcr = TargetCross()
@@ -752,7 +751,7 @@ class BasedMapObject(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(60)
+        self.tick = lambda: self.clock.tick(120)
 
     def update(self, *args):
         self.realv = self.v - plane.vector
@@ -1051,7 +1050,7 @@ class Plane(pygame.sprite.Sprite):
         self.t = 0
         self.clock = pygame.time.Clock()
         self.clock.tick()
-        self.tick = lambda: self.clock.tick(60)
+        self.tick = lambda: self.clock.tick(120)
         self.deltat = 0
 
         self.rect = self.image.get_rect()
@@ -1338,7 +1337,7 @@ class Enemy(BasedMapObject):
             if range > 200:
                 if self.rockets and self.launched_rockets < 2 and self.rocketlimit and self.t - self.prev_rocket_t >= 4:
                     self.launched_rockets += 1
-                    Rocket(Vector(25, self.v.angle), self.rect.center, plane, self)
+                    Rocket(Vector(15, self.v.angle), self.rect.center, plane, self)
                     self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
         else:
@@ -1448,7 +1447,7 @@ class Target(BasedMapObject):
 
 
 class Radar(pygame.sprite.Sprite):
-    def __init__(self, range=1000, rtspeed=12):
+    def __init__(self, range=1000, rtspeed=15):
         super().__init__(radar, all_sprites)
         self.image = scale(load_image('radar.png', 'data'), 200, 200)
         self.size = self.image.get_size()
@@ -1581,7 +1580,7 @@ while running:
         object.update()
     pygame.display.flip()
     if not paused:
-        t += clock.tick(30) / 1000
+        t += clock.tick(60) / 1000
 pygame.quit()
 
 paused = True
@@ -2790,7 +2789,7 @@ class Enemy(BasedMapObject):
             self.explosion_imgs.append(scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.size[0], self.size[1]))
             self.explosion_imgs.append(scale(load_image(f'{i}.png', 'data/plane_explosion_animation', -1), self.size[0], self.size[1]))
         self.orig = self.image
-        self.image = pygame.transform.rotate(self.orig, self.v.angle - 90)
+        self.image = pygame.transform.rotate(self.orig, 90)
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
@@ -2881,7 +2880,7 @@ class Enemy(BasedMapObject):
         angle, range = self.get_angle(self.v.angle)
         if -175 > angle > -195:
             if -150 > angle > -210:
-                if range < 700:
+                if range < 1200:
                     self.shoot()
             if self.animation_sc < 6:
                 self.animation_sc += 1
@@ -2916,11 +2915,12 @@ class Enemy(BasedMapObject):
         return ans
 
     def shoot(self):
+        self.rect = self.image.get_rect(center=self.rect.center)
         if self.bulletlimit > 1 and self.t - self.prev_bullet_t >= 0.1:
             angle_rad = math.radians(-self.v.angle - 90)
             if self.guns == 1:
-                new_x = self.rect.centerx + (math.cos(angle_rad)) - (math.sin(angle_rad))
-                new_y = self.rect.centery + (50 * math.sin(angle_rad)) + (50 * math.cos(angle_rad))
+                new_x = self.rect.centerx + (math.cos(angle_rad)) - (100 * math.sin(angle_rad))
+                new_y = self.rect.centery + (math.sin(angle_rad)) + (100 * math.cos(angle_rad))
                 Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg, self.spread)
                 self.bulletlimit -= 1
             else:
@@ -2932,6 +2932,7 @@ class Enemy(BasedMapObject):
                 Bullet(Vector(self.bulletspeed, self.v.angle), (new_x, new_y), self.bltdmg, self.spread)
                 self.bulletlimit -= 2
             self.prev_bullet_t = self.t
+
 
     def explosion(self):
         prev_rect = self.rect.center
@@ -3132,6 +3133,7 @@ while running:
     for object in menu:
         object.update()
     pygame.display.flip()
+    print('a')
     if not paused:
         t += clock.tick(30) / 1000
 pygame.quit()
