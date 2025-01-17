@@ -3,6 +3,7 @@ import math
 import os
 import random
 import sys
+from copy import deepcopy
 from math import sin, cos, acos, degrees, radians
 import pygame
 import screeninfo
@@ -14,6 +15,7 @@ for monitor in screeninfo.get_monitors():
 size = width, height = screen.get_size()
 center = (width // 2, height // 2)
 font = pygame.font.Font(None, 40)
+music = ['sounds/music_1.mp3', 'sounds/music_2.mp3', 'sounds/music_3.mp3']
 in_game = False
 import json
 import math
@@ -38,7 +40,7 @@ boolparams = True
 menuloaded = True
 params = {}
 menu = []
-
+sounds = []
 results = {
     "Planes destroyed": 0,
     "Ground targets destroyed": 0,
@@ -56,6 +58,12 @@ for j, i in enumerate(planes):
     print(j + 1, i)
 # chosen_plane = planes[list(planes.keys())[int(input()) - 1]]
 
+
+def play_music(index):
+    pygame.mixer.music.load(music[index])
+    pygame.mixer.music.play()
+    pygame.mixer.music.set_volume(0.5)
+    return index
 
 class Clock:
     def __init__(self, fps):
@@ -127,7 +135,7 @@ def load_game(era, level, chosen_plane, chosen_map):
         Target()
     tcr = TargetCross()
     target = Target()
-    r = Radar(range=4000, rtspeed=3 + era)
+    r = Radar(range=4000, rtspeed=7 + era)
 
     enemiesc = level
     enemyvars = enemytypes[era]
@@ -136,6 +144,8 @@ def load_game(era, level, chosen_plane, chosen_map):
         j = random.choice(enemyvars)
         print(j)
         Enemy(0, (random.choice(range(-4000, 4000)), random.choice(range(-4000, 4000))), **planes[list(planes.keys())[j]])
+    wait(0.5)
+
     #enemy1 = Enemy(0, (1000, 1000), *planes[random.choice(list(planes.keys()))].values())
     # enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
     #enemy2 = Enemy(90, (0, 0), *planes[random.choice(list(planes.keys()))].values())
@@ -466,6 +476,10 @@ def continue_game():
     plane.sound.play(loops=-1)
     load_ingameui()
 
+
+def load_event(text):
+    prcolor, prfontsize, prh = (255, 255, 255), 40, 100
+    Text((width // 2, height // 4), text, fontsize=prfontsize, fontcolor=prcolor)
 
 def load_ingameui():
     if not check_enemies():
@@ -829,7 +843,8 @@ class Bomb(BasedMapObject):
             elif self.t >= self.flytime and self.status == "bomb":
                 self.v = Vector()
                 prev_rect = self.rect.center
-                self.explotionsnd.play()
+                if self.explosion_sc == 0:
+                    Sound(self.explotionsnd)
                 self.image = self.explosion_imgs[self.explosion_sc]
                 self.rect = self.image.get_rect()
                 self.rect.center = prev_rect
@@ -945,6 +960,7 @@ class Bullet(BasedMapObject):
         self.size = self.image.get_size()
         self.rect.x, self.rect.y = posf(pos, self.size)
         self.orig = self.image
+        self.sounds = [pygame.mixer.Sound('sounds/bullet_snd1.mp3'), pygame.mixer.Sound('sounds/bullet_snd2.mp3'), pygame.mixer.Sound('sounds/bullet_snd3.mp3')]
         self.explosion_imgs = [scale(load_image(f'{i // 2}.png', 'data/rocket_explosion_animation', -1), 20, 20) for i in
                                range(22)]
         self.animation_sc = 0
@@ -975,8 +991,14 @@ class Bullet(BasedMapObject):
             if pygame.sprite.spritecollideany(self, planes_sprites):
                 t = pygame.sprite.spritecollideany(self, planes_sprites)
                 if pygame.sprite.collide_mask(self, t):
-                    self.killed = True
-                    t.health -= self.damage
+                    if t.__class__.__name__ != self.__class__.__name__:
+                        if t.__class__.__name__ == 'Plane':
+                            print('True')
+                            snd = random.choice(self.sounds)
+                            snd.set_volume(0.3)
+                            snd.play()
+                        self.killed = True
+                        t.health -= self.damage
         else:
             self.explosion()
 
@@ -991,24 +1013,26 @@ class Bullet(BasedMapObject):
             self.kill()
 
 
+class Sound:
+    def __init__(self, sound):
+        sound.play()
+
+
 class Plane(pygame.sprite.Sprite):
     def __init__(self, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, bomb_damage, spread, guns):
         # print(bomb_damage)
         super().__init__(player, planes_sprites, all_sprites)
-
-
         if name == 'F-86' or name == 'Me 163':
             self.mgsnd = pygame.mixer.Sound("sounds/a10a-brrt-original-—-сделано-в-Clipchamp.mp3")
         else:
             self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.mp3")
-        self.mgsnd.set_volume(0.5)
+        self.mgsnd.set_volume(0.3)
         self.sound = pygame.mixer.Sound('sounds/planesnd.wav')
         self.sound.set_volume(0.2)
         self.sound.play(loops=-1)
         self.name = name
         self.bombs = []
-
         self.explosion_imgs = []
         self.image = load_image('0.png', f'data/{name}', -1)
         for i in range(0, 5):
@@ -1025,14 +1049,14 @@ class Plane(pygame.sprite.Sprite):
             self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
             if i != 0:
                 self.animations.append(scale(img, img.get_width() * size, img.get_height() * size))
-        self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
-        self.explotionsnd.set_volume(0.4)
+        self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.mp3")
+        self.explotionsnd.set_volume(0.2)
         self.bulletlimit = max_bullets
         self.rocketlimit = max_rockets
         self.bulletspeed = bullet_speed
         self.blltdmg = bullet_damage
         self.rctdmg = rocket_damage
-        self.health = self.maxhealth = health
+        self.health = self.maxhealth = health + 100
         self.rockets = rockets
         self.launched_rockets = 0
         self.bombing = False
@@ -1046,6 +1070,9 @@ class Plane(pygame.sprite.Sprite):
         self.crosst = 0.05
         self.spread = spread
         self.guns = guns
+        sounds.append(self.sound)
+        sounds.append(self.mgsnd)
+        sounds.append(self.explotionsnd)
 
         self.t = 0
         self.clock = pygame.time.Clock()
@@ -1068,6 +1095,7 @@ class Plane(pygame.sprite.Sprite):
         self.animation_sc = 6
         self.prev_rocket_t = 0
         self.prev_bullet_t = 0
+
 
     def update(self, *args, **kwargs):
         # print(self.health)
@@ -1175,12 +1203,13 @@ class Plane(pygame.sprite.Sprite):
         return min(enemies.sprites(), key=lambda x: abs(x.get_vector_from_plane().value))
 
     def explosion(self):
+        if self.explosion_sc == 1:
+            Sound(self.explotionsnd)
         prev_rect = self.rect.center
         self.image = self.explosion_imgs[self.explosion_sc]
         self.rect = self.image.get_rect()
         self.rect.center = prev_rect
         self.explosion_sc += 1
-        self.explotionsnd.play()
         self.sound.stop()
         self.mgsnd.stop()
         if self.explosion_sc == 10:
@@ -1222,7 +1251,7 @@ class Enemy(BasedMapObject):
 
     def __init__(self, angle, pos, name, size, health, max_speed, mobility, max_bullets, rockets, max_rockets,
                  max_bombs, bullet_speed, bullet_damage, rocket_damage, spread, guns, bomb_damage=0):
-        super().__init__(Enemy.image, Vector(max_speed, angle), pos)
+        super().__init__(Enemy.image, Vector(max_speed - 2, angle), pos)
         self.add(enemies, planes_sprites)
         self.rect = self.image.get_rect()
         self.rect.centerx, self.rect.centery = pos
@@ -1241,6 +1270,11 @@ class Enemy(BasedMapObject):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=self.rect.center)
         self.explotionsnd = pygame.mixer.Sound("sounds/bomb_explotano.wav")
+        if name == 'F-86' or name == 'Me 163':
+            self.mgsnd = pygame.mixer.Sound("sounds/a10a-brrt-original-—-сделано-в-Clipchamp.mp3")
+        else:
+            self.mgsnd = pygame.mixer.Sound("sounds/mgsnd.mp3")
+        self.mgsnd.set_volume(0.2)
         self.explotionsnd.set_volume(0.4)
         self.caught = False
         self.target = plane
@@ -1316,11 +1350,22 @@ class Enemy(BasedMapObject):
         self.animation_sc -= 1 if self.animation_sc > 0 else 0
         self.image = self.animations[self.animation_sc]
 
-    def dodge(self):
-        if self.status == 'right':
-            self.turn_left()
-        else:
-            self.turn_right()
+    def dodge(self, angle):
+        more_angle = self.get_angle(self.v.angle + 1)[0]
+        less_angle = self.get_angle(self.v.angle - 1)[0]
+        if angle > 0:
+            # print(self.get_angle(self.v.angle)[1])
+            if round(more_angle) >= round(less_angle):
+                self.turn_right()
+            elif round(more_angle) <= round(less_angle):
+                self.turn_left()
+        elif angle < 0:
+            # print(self.get_angle(self.v.angle)[1])
+            if round(more_angle) >= round(less_angle):
+                self.turn_left()
+            elif round(more_angle) <= round(less_angle):
+                self.turn_right()
+
 
     def attack(self):
         # self.v = Vector(self.v.value, plane.vector.angle)
@@ -1337,11 +1382,14 @@ class Enemy(BasedMapObject):
             if range > 200:
                 if self.rockets and self.launched_rockets < 2 and self.rocketlimit and self.t - self.prev_rocket_t >= 4:
                     self.launched_rockets += 1
-                    Rocket(Vector(15, self.v.angle), self.rect.center, plane, self)
+                    Rocket(Vector(20, self.v.angle), self.rect.center, plane, self)
                     self.rocketlimit -= 1
                     self.prev_rocket_t = self.t
         else:
-            self.circle_attack(angle)
+            if range < 300:
+                self.dodge(angle)
+            else:
+                self.circle_attack(angle)
 
     def get_angle(self, angle):
         ans = math.degrees(0)
@@ -1386,8 +1434,6 @@ class Enemy(BasedMapObject):
         self.rect = self.image.get_rect()
         self.rect.center = prev_rect
         self.explosion_sc += 1
-        self.explotionsnd.play()
-
         if self.explosion_sc == 10:
             global results
             results["Planes destroyed"] += 1
@@ -1450,19 +1496,21 @@ class Target(BasedMapObject):
 class Radar(pygame.sprite.Sprite):
     def __init__(self, range=1000, rtspeed=15):
         super().__init__(radar, all_sprites)
-        self.image = scale(load_image('radar.png', 'data'), 200, 200)
+        self.image = scale(load_image('radar.png', 'data'), 400, 400)
         self.size = self.image.get_size()
         self.rect = self.image.get_rect()
         self.rect.x = 10
         self.rect.y = 10
         self.x0 = self.rect.centerx
         self.y0 = self.rect.centery
-        self.r = 80
+        self.r = 175
         self.angle = 0
         self.enemy = False
         self.range = range
         self.rtspeed = rtspeed
         self.caught = []
+        self.clock = pygame.time.Clock()
+        self.clock.tick()
 
     def update(self, *args, **kwargs):
         self.x = self.x0 + self.r * math.cos(math.radians(self.angle))
@@ -1481,17 +1529,18 @@ class Radar(pygame.sprite.Sprite):
                 posy = self.rect.centery - (s.vy / self.range * self.r)
                 enemy.caught = True
                 self.caught.append([posx, posy, self.angle, enemy, 'enemy'])
-                pygame.draw.circle(screen, (0, 255, 0), (posx, posy), 5)
-        for enemy in targets.sprites():
-            s = enemy.get_vector_from_plane()
+                pygame.draw.circle(screen, (255, 0, 0), (posx, posy), 5)
+        for target in targets.sprites():
+            s = target.get_vector_from_plane()
             # print(int(s.angle), self.angle)
-            if s.value < self.range and int(s.angle) - int(s.angle) % self.rtspeed == 360 - self.angle and not enemy.caught:
+            if s.value < self.range and int(s.angle) - int(s.angle) % self.rtspeed == 360 - self.angle and not target.caught:
                 posx = self.rect.centerx + (s.vx / self.range * self.r)
                 posy = self.rect.centery - (s.vy / self.range * self.r)
-                enemy.caught = True
-                self.caught.append([posx, posy, self.angle, enemy, 'target'])
+                target.caught = True
+                self.caught.append([posx, posy, self.angle, target, 'target'])
                 pygame.draw.polygon(screen, (0, 255, 0), (
                     (posx - 3, posy + 4), (posx + 4, posy + 4), (posx + 4, posy - 4), (posx - 4, posy - 4)))
+
 
     def redraw(self):
         newarr = []
@@ -1502,7 +1551,7 @@ class Radar(pygame.sprite.Sprite):
                 newarr.append(self.caught[i])
                 posx, posy =  tuple(self.caught[i][:2])
                 if self.caught[i][4] == 'enemy':
-                    pygame.draw.circle(screen, (0, 255, 0), (posx, posy), 5)
+                    pygame.draw.circle(screen, (255, 0, 0), (posx, posy), 5)
                 else:
                     pygame.draw.polygon(screen, (0, 255, 0), (
                         (posx - 3, posy + 4), (posx + 4, posy + 4), (posx + 4, posy - 4), (posx - 4, posy - 4)))
@@ -1528,9 +1577,12 @@ t = 0
 firing = False
 running = True
 plane = None
+music_index = random.randint(0, 2)
 
 while running:
-    # print(in_game)
+    if not pygame.mixer.music.get_busy():
+        current_song_index = (music_index + 1) % len(music)
+        play_music(music_index)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -1572,6 +1624,7 @@ while running:
     screen.fill((0, 0, 0))
     all_sprites.draw(screen)
     player.draw(screen)
+
     if paused is False:
         all_sprites.update()
         player.update()
