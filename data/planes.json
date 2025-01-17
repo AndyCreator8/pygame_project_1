@@ -54,7 +54,7 @@
   "F-86": {
     "name": "F-86",
     "size": 0.5,
-    "health":  1000,
+    "health":  30,
     "max_speed": 15,
     "mobility": 1.5,
     "max_bullets": 2000,
